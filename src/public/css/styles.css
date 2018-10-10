@@ -413,6 +413,9 @@
 .jc-space-between {
 	justify-content: space-between !important;
 }
+.jc-end {
+	justify-content: end !important;
+}
 .d-block {
 	display: block !important;
 }
@@ -488,4 +491,7 @@
 }
 .h-5{
 	height: 27rem;
+}
+.h-40px {
+	height: 40px;
 }

@@ -1,5 +1,5 @@
 <template>
-    <div v-if="redirectTo === 0">
+    <div>
         <!-- COMPONENTE BARRA LATERAL Y SUPERIOR-->
         <sidenav :nick="nick" />
         <transition name="fade" mode="out-in">
@@ -12,61 +12,38 @@
             </div>
           </div>
         </transition>
-        <div class="container mt-3-l-and-up">
-            <div class="row">
-                <!-- columna juego -->
-                <div class="col s12 l8">
-                    <div class="row hoverable card-panel h-vh-70">
-                        <div class="col s6 m3 l3">
-                            <div class="left-align">
-                                <span class="flow-text">LOCAL</span>
-                                <p class="flow-text">
-                                    <i class="material-icons">check</i>
-                                    {{ p1 }}
-                                </p>
-                            </div>
-                        </div>
-                        <div class="col s6 m3 l3 push-m6 push-l6">
-                            <div class="right-align">
-                                <span class="flow-text">VISIT</span>
-                                <p class="flow-text">
-                                    <i class="material-icons"></i>
-                                    {{ p2 }}
-                                </p>
-                            </div>
-                        </div>
-                        <div class="col s12 m6 l6 pull-m3 pull-l3">
-                            <div class="d-flex jc-center">
-                                <table-triki @getaction="getTarget" />
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <!-- Fin columna juego -->
-                <!-- Columna chat -->
-                <div class="col s12 m6 l4 push-m3">
-                    <div class="row hoverable card-panel h-vh-70 ml-0-2-l ml-0-5-xl">
-                        <ul class="">
-                            <div class="">
-                                <div class="input-field">
-                                    <input type="text">
-                                    <label>Nombre de usuario</label>
-                                </div>
-                                <div class="input-field">
-                                    <input type="text">
-                                    <label>Contraseña</label>
-                                </div>
-                                <button class="btn green lighten-1">
-                                    Iniciar Sesión
-                                </button>
-                            </div>
-                        </ul>
-                    </div>
-                </div>
-                <!-- Fin columna chat -->
+
+        <div class="container mt-2">
+            <div class="row hoverable card-panel">
+              <div class="col s6 m3 l3">
+                  <div class="left-align">
+                      <span class="flow-text">LOCAL</span>
+                      <div class="flow-text d-flex h-40px align-items-center" >
+                          <i class="material-icons blue-text mr-0-5">person</i>
+                          {{ p1 }}
+                      </div>
+                  </div>
+              </div>
+              <div class="col s6 m3 l3 push-m6 push-l6">
+                  <div class="right-align">
+                      <span class="flow-text">VISITA</span>
+                       <div class="flow-text d-flex h-40px align-items-center jc-end" >
+                          {{ p2 }}
+                          <i class="material-icons blue-text ml-0-5">person</i>
+                      </div>
+                  </div>
+              </div>
+              <div class="col s12 m6 l6 pull-m3 pull-l3">
+                  <div class="d-flex jc-center">
+                      <table-triki @getaction="getTarget" />
+                  </div>
+              </div>
+              <div class="col s12">
+                <p class="flow-text center-align">Turno actual: {{ p1 | upperCase }}</p>
+              </div>
             </div>
         </div>
-        <pre>{{$data}}</pre>
+        <!-- <pre>{{$data}}</pre> -->
     </div>
 </template>
 <script>
@@ -203,12 +180,13 @@ export default {
                 socket.emit("entry", this.nick);
               } else {
                 /* CUANDO LA RUTA YA HA CADUCADO */
-                swal({
-                  icon: "warning",
-                  title: "¡Partida caducada!",
-                  text: "No puedes acceder a esta partida",
-                  buttons: "OK"
-                }).then(res  => this.$router.push({ name: 'home' }) );
+                // swal({
+                //   icon: "warning",
+                //   title: "¡Partida caducada!",
+                //   text: "No puedes acceder a esta partida",
+                //   buttons: "OK"
+                // })
+                // .then(res  => this.$router.push({ name: 'home' }) );
               }
             } else {
               /* CUANDO LA SESIÓN HA EXPIRADO */
@@ -837,6 +815,11 @@ export default {
         }
       }
       return index;
+    }
+  },
+  filters: {
+    upperCase(value) {
+      return (value) ? value.toUpperCase() : '';
     }
   },
   /* ------------------------- COMPONENTES ------------------------------ */
