@@ -1,5 +1,5 @@
 <template>
-    <div>
+    <div v-if="redirectTo === 0">
         <!-- COMPONENTE BARRA LATERAL Y SUPERIOR-->
         <sidenav :nick="nick" />
         <transition name="fade" mode="out-in">
@@ -183,13 +183,13 @@ export default {
                 socket.emit("entry", this.nick);
               } else {
                 /* CUANDO LA RUTA YA HA CADUCADO */
-                // swal({
-                //   icon: "warning",
-                //   title: "¡Partida caducada!",
-                //   text: "No puedes acceder a esta partida",
-                //   buttons: "OK"
-                // })
-                // .then(res  => this.$router.push({ name: 'home' }) );
+                swal({
+                  icon: "warning",
+                  title: "¡Partida caducada!",
+                  text: "No puedes acceder a esta partida",
+                  buttons: "OK"
+                })
+                .then(res  => this.$router.push({ name: 'home' }) );
               }
             } else {
               /* CUANDO LA SESIÓN HA EXPIRADO */
