@@ -39,11 +39,13 @@
                   </div>
               </div>
               <div class="col s12">
-                <p class="flow-text center-align">Turno actual: {{ p1 | upperCase }}</p>
+                <p class="flow-text center-align">Turno actual: {{ playerTurn | upperCase }}</p>
               </div>
             </div>
+            
         </div>
         <!-- <pre>{{$data}}</pre> -->
+        <chat :user="p2"/> 
     </div>
 </template>
 <script>
@@ -51,6 +53,7 @@
 import Sidenav from "./helpers/SideNav.vue";
 // Spinner
 import Spinner from "./helpers/Spinner.vue";
+import Chat from './Chat.vue';
 // Alertas
 import swal from "sweetalert";
 
@@ -828,6 +831,7 @@ export default {
     Sidenav,
     /* Spinner de carga */
     Spinner,
+    Chat,
     /* Tablero de juego */
     tableTriki: {
       template: `

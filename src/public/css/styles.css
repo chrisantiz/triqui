@@ -1,16 +1,98 @@
-.show-status-icons>i{
-    position: absolute;
-    right: .1rem;
-    top: 1rem;
-    z-index: -1;
-}
-
 .fade-enter-active, .fade-leave-active {
     transition: opacity .5s;
 }
 .fade-enter, .fade-leave-to /* .fade-leave-active */{
     opacity: 0;
 }
+/* ----------------------- ESTILOS chat-container ----------------------------- */
+.chat-container {
+	position: absolute;
+	z-index: 100;
+	bottom: 0;
+	overflow: hidden;
+	width: 85%;
+	display: flex;
+	justify-content: flex-end;
+}
+.chat {
+	width: 300px;
+	height: 350px;
+	display: flex;
+	flex-direction: column;
+	border: 1px solid rgba(0,0,0,.2);
+	position: relative;
+	transition: all .5s ease;
+	transform: translateY(90%);
+}
+.chat-toggle {
+	transform: translateY(0);
+}
+.text-area {
+	resize: none;
+	overflow-y: hidden;
+	outline: none;
+	border: none;
+	padding: .7rem 1rem;
+}
+.chat-me, .chat-rival {
+	padding: .5rem;
+	border-radius: 15px;
+	color:white;
+}
+.chat-me {
+	align-self: flex-end;
+	border-top-right-radius: 0;
+	background-color: rgb(86, 133, 236);
+}
+.chat-rival {
+	align-self: flex-start;
+	border-top-left-radius: 0;
+	background-color: rgb(245, 174, 68);
+}
+.chat > .chat-title-bar {
+	cursor: pointer;
+	width: 100%;
+	line-height: 35px;
+	border-bottom: 1px solid rgba(0,0,0,.1);
+	display: flex;
+	justify-content: space-between;
+}
+.chat>.chat-title-bar>.alert {
+	display: flex;
+	align-items: center;
+	margin-right: .5rem;
+}
+.chat > .chat-body {
+	height: 270px;
+	overflow-x: hidden;
+	padding: 1rem;
+	background-color: #FFF;
+	border-bottom: 1px solid rgba(0, 0, 0, .1);
+	display: flex;
+	flex-direction: column;
+}
+.message {
+	max-width: 100%;
+	margin-bottom: 1rem;
+}
+.message>small{
+	display: block;
+	font-style: italic;
+}
+.chat .chat-send-message {
+	display: flex;
+	position: absolute;
+	bottom: 0;
+	width: 100%;
+}
+.chat .chat-send-message>button {
+	height: 98%;
+	line-height: 41px;
+	display: flex;
+	border-radius: 0;
+	position: sticky;
+}
+
 /* --------------------- ESTILOS TABLA DE JUEGO ---------------------- */
 /* Div tabla */
 .div-table {
@@ -89,6 +171,9 @@
 .fs-1 {
 	font-size: 1rem;
 }
+.fs-0-8 {
+	font-size: .8rem;
+}
 .line-height-40 {
 	line-height: 40px;
 }
@@ -121,6 +206,7 @@
 /* ------------------------------ MEDIA QUERIES ---------------------------------- */
 /* Dispositivos pequeños (Móviles) <= 600px */
 @media (max-width: 600px) {
+	.chat-container {width: 90%};
 	.right-align-s {
 		text-align: right !important;
 	}
@@ -249,6 +335,7 @@
 }
 /* Dispositivos de escritorio >= 993px <= 1200px */
 @media (min-width: 993px) and (max-width:1200px) {
+	.chat-container { width: 70%; }
 	.right-align-l {
 		text-align: right !important;
 	}
@@ -316,6 +403,7 @@
 }
 /* Dispositivos grandes > 1200px */
 @media (min-width: 1201px) {
+	.chat-container { width: 70%; }
 	.m-sides-1-xl {
 		margin: 0 1rem !important;
 	}
@@ -405,7 +493,7 @@
 	align-items: center !important;
 }
 .align-items-end {
-	align-items: end !important;
+	align-items: flex-end !important;
 }
 .jc-space-around {
 	justify-content: space-around !important;
@@ -414,7 +502,7 @@
 	justify-content: space-between !important;
 }
 .jc-end {
-	justify-content: end !important;
+	justify-content: flex-end !important;
 }
 .d-block {
 	display: block !important;
@@ -488,6 +576,12 @@
 }
 .p-0 {
 	padding: 0 !important;
+}
+.pl-0-5 {
+	padding-left: .5rem !important;
+}
+.pl-1 {
+	padding-left: 1rem !important;
 }
 .h-5{
 	height: 27rem;
