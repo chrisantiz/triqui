@@ -80,10 +80,9 @@
 import Sidenav from './helpers/SideNav.vue';
 // Componente del Spinner de precarga
 import Spinner from './helpers/Spinner.vue';
-// Socket
-import {socket} from '../socketClient';
-// import io from 'socket.io-client';
-// const socket = io('http://127.0.0.1:3000');
+/* Socket.io */
+import io from 'socket.io-client';
+const socket = io.connect('http://127.0.0.1:3000/home');
 // Alertas
 import swal from 'sweetalert';
 

@@ -1,6 +1,6 @@
 <template>
-    <div v-if="redirectTo === 0">
-    <!-- <div> -->
+    <!-- <div v-if="redirectTo === 0"> -->
+    <div>
         <!-- COMPONENTE BARRA LATERAL Y SUPERIOR-->
         <sidenav :nick="nick" />
         <transition name="fade" mode="out-in">
@@ -16,37 +16,69 @@
 
         <div class="container mt-2">
             <div class="row hoverable card-panel">
+              <!-- Columna del local -->
               <div class="col s6 m3 l3">
                   <div class="left-align">
-                      <span class="flow-text">LOCAL</span>
+                      <span class="flow-text">LOCAL - X</span>
+                      <!-- Nick del jugador local -->
                       <div class="flow-text d-flex h-40px align-items-center" >
                           <i class="material-icons blue-text mr-0-5">person</i>
-                          {{ p1 }}
+                          {{ p1 === nick ? 'yo' : p1 }}
                       </div>
+                      <!-- Ícono que se mostrará cuando el turno sea para el visitante -->
+                      <transition name="fade">
+                        <div v-show="playerTurn === p1" 
+                        class="my-turn">
+                          <!-- Mensaje de ayuda al hacer hover sobre el ícono -->
+                          <i class="material-icons tooltipped"
+                          data-position="bottom"
+                          :data-tooltip="p1===nick ? 'Es tu turno': 'Turno para ' + rivalNick"
+                          >touch_app</i>
+                        </div>
+                      </transition>
                   </div>
               </div>
+              <!-- Fin columna loca -->
+              <!-- Columna visitante -->
               <div class="col s6 m3 l3 push-m6 push-l6">
                   <div class="right-align">
-                      <span class="flow-text">VISITA</span>
+                      <span class="flow-text">O - VISITA</span>
+                      <!-- Nick del jugador visitante -->
                        <div class="flow-text d-flex h-40px align-items-center jc-end" >
-                          {{ p2 }}
+                          {{ p2 === nick ? 'yo' : p2 }}
                           <i class="material-icons blue-text ml-0-5">person</i>
                       </div>
+                      <!-- Ícono que se mostrará cuando el turno sea para el visitante -->
+                      <transition name="fade">
+                        <div v-show="playerTurn === p2" class="my-turn">
+                          <!-- Mensaje de ayuda al hacer hover sobre el ícono -->
+                          <i class="material-icons tooltipped"
+                          data-position="bottom"
+                          :data-tooltip="p2===nick ? 'Es tu turno': 'Turno para ' + rivalNick">
+                          touch_app</i>
+                        </div>
+                      </transition>
                   </div>
               </div>
+              <!-- Fin columna visitante -->
               <div class="col s12 m6 l6 pull-m3 pull-l3">
                   <div class="d-flex jc-center">
                       <table-triki @getaction="getTarget" />
                   </div>
               </div>
-              <div class="col s12">
-                <p class="flow-text center-align">Turno actual: {{ playerTurn | upperCase }}</p>
+              <div class="col s12 d-flex jc-end btn-exit">
+                <button class="btn-small red waves-effect waves-light" @click="closeSession">
+                  Abandonar
+                  <i class="material-icons right">close</i>
+                </button>
               </div>
             </div>
             
         </div>
         <!-- <pre>{{$data}}</pre> -->
         <chat :user="rivalNick"/> 
+
+        
     </div>
 </template>
 <script>
@@ -54,11 +86,13 @@
 import Sidenav from "./helpers/SideNav.vue";
 // Spinner
 import Spinner from "./helpers/Spinner.vue";
+// Chat
 import Chat from './Chat.vue';
 // Alertas
 import swal from "sweetalert";
-
-import { socket } from "../socketClient";
+/* Socket.io */
+import io from 'socket.io-client';
+const socket = io.connect('http://127.0.0.1:3000/play');
 
 export default {
   /* ----------------------------- VARIABLES ------------------------------- */
@@ -308,6 +342,9 @@ export default {
         .then( res => window.location.href = '/home' );
       }
     });
+  },
+  mounted() {
+    M.Tooltip.init(document.querySelectorAll('.tooltipped'));
   },
   /* ---------------- PROPIEDADES OBSERVADORAS DE CAMBIOS ----------------- */
   watch: {
@@ -821,6 +858,38 @@ export default {
         }
       }
       return index;
+    },
+    /* Mensaje de confirmación al intentar abandonar una partida */
+    closeSession() {
+      swal({
+        title: '¡Abandonar partida!',
+        icon: 'warning',
+        text: '¿Estás seguro de abandonar la partida?',
+        dangerMode: true,
+        buttons: {
+          no: {
+            text: 'No',
+            value: false,
+            className: 'green'
+          },
+          si: {
+            text: 'Sí',
+            value: true,
+            className: 'red'
+          }
+        },
+        closeOnClickOutside: false,
+        closeOnEsc: false
+      })
+      .then( action => {
+        switch (action) {
+          case true:
+            break;
+        
+          case false:
+            break;
+        }
+      });
     }
   },
   filters: {

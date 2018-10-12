@@ -7,8 +7,6 @@ event.on('startgame', data => {
     let index = games.findIndex( dt => dt.path === data.path);
     // Agregarse solo cuando no exista
     if(index === -1) games.push(data);
-    console.log(`Estado al agregar:`);
-    console.log(games);
 });
 event.on('left', user => { 
     /* Índice en el arreglo del usuario saliente */
