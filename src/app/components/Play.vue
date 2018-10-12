@@ -1,5 +1,6 @@
 <template>
     <div v-if="redirectTo === 0">
+    <!-- <div> -->
         <!-- COMPONENTE BARRA LATERAL Y SUPERIOR-->
         <sidenav :nick="nick" />
         <transition name="fade" mode="out-in">
@@ -45,7 +46,7 @@
             
         </div>
         <!-- <pre>{{$data}}</pre> -->
-        <chat :user="p2"/> 
+        <chat :user="rivalNick"/> 
     </div>
 </template>
 <script>

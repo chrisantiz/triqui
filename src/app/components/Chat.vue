@@ -46,7 +46,9 @@ export default {
             /* Mensaje que se escribe */
             message: '',
             /* Número de mensajes nuevos */
-            numMessages: 0
+            numMessages: 0,
+            /* Saber si el chat se está abriendo o cerrando */
+            open: false
         }
     },
     methods: {
@@ -60,16 +62,28 @@ export default {
             chat.classList.toggle('chat-toggle');
             /* Bajar la barra de desplazamiento */
             body.scrollTop = body.scrollTopMax;
-            /* Esperar medio segundo para colocar el foco */
-            setTimeout( () => {
-                chat.classList.forEach(element => {
-                    /* Cuando se abre el chat */
-                    if (element === 'chat-toggle') {
+            /* Recorrer las clases que tenga el nodo */
+            for (let className of chat.classList) {
+                /* Cuando contenga esta clase es porque el chat está abierto */
+                if (className === 'chat-toggle') {
+                    this.open = true;
+                    /* Para que el chat se ponga por encima del tablero triki */
+                    document.querySelector('.chat-container').style.cssText = 'z-index:100;';
+                    /* Esperar el tiempo que tarda en abrir el chat para colocar el foco */
+                    setTimeout( () => {
                         document.querySelector('.text-area').focus();
-                        return;
-                    }
-                });
-            },500)
+                    },500);
+                    break;
+                } else {
+                    this.open = false;
+                }
+            }
+            /* Cuando se va a cerrar, poner el chat por debajo del tablero */
+            if (!this.open) {
+                setTimeout( () => {
+                    document.querySelector('.chat-container').style.cssText = 'z-index:-1;';
+                },500);
+            }
         },
         /* Pegar los mensajes escritos en el chat */
         print() {
