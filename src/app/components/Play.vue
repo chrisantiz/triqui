@@ -438,7 +438,9 @@ export default {
       if (this.active && this.playerTurn === this.nick) {
         /* Verificar que la casilla a marcar esté vacía */
         if (!cell.textContent.length) {
+          /* Restaurar valores de respuesta */
           if (this.myResponse) this.myResponse = false;
+          if (this.rivalResponse) this.rivalResponse = false;
           /* ---------- ACCIÓN DEL USUARIO EN TURNO ---------- */
           if (!this.auto) {
             this.turn++;
