@@ -8,7 +8,7 @@ body {
     opacity: 0;
 }
 /* ----------------------- ESTILOS chat-container ----------------------------- */
-.chat-container {
+/*.chat-container {
 	position: absolute;
 	z-index: -1;
 	bottom: 0;
@@ -16,17 +16,23 @@ body {
 	width: 85%;
 	display: flex;
 	justify-content: flex-end;
-}
+}*/
 .chat {
+	position: absolute;
+	bottom: 0px;
 	width: 300px;
 	height: 350px;
 	z-index: 100;
 	display: flex;
 	flex-direction: column;
-	border: 1px solid rgba(0,0,0,.2);
-	position: relative;
+	border: 1px solid rgba(0, 0, 0, .2);
 	transition: all .5s ease;
 	transform: translateY(90%);
+}
+@media (max-width: 334px) {
+	.chat {
+		width: 90%;
+	}
 }
 .chat-toggle {
 	transform: translateY(0);
@@ -36,6 +42,8 @@ body {
 	overflow-y: hidden;
 	outline: none;
 	border: none;
+	background-color: white;
+	border-top: 1px solid rgba(0, 0, 0, .2);
 	padding: .7rem 1rem;
 }
 .chat-me, .chat-rival {
@@ -91,7 +99,7 @@ body {
 }
 .chat .chat-send-message>button {
 	height: 98%;
-	line-height: 41px;
+	line-height: 43px;
 	display: flex;
 	border-radius: 0;
 	position: sticky;
@@ -164,13 +172,34 @@ body {
 		height: 9	rem !important;
 	}
 }
+@media (min-width: 601px) and (max-width: 739px) {
+	.div-table {
+		width: 15rem;
+		height: 15rem;
+	}
+}
 @media (max-width: 400px) {
 	.btn-exit {
 		margin-top: 1rem;
 		justify-content: center !important;
 	}
-	.trikiTable td {
-		height: 5.5rem !important;;
+	.div-table {
+		height: 15rem;
+		width: 15rem;
+	}
+	.pt-0-5-on-small-only {
+		padding-top: .5rem;
+	}
+	.pb-1-on-small-only {
+		padding-bottom: 1rem;
+	}
+	/* .trikiTable td {
+		height: 5.5rem !important;
+	} */
+}
+@media (min-width: 401px) {
+	.mt-2-m-and-up{
+		margin-top: 2rem;
 	}
 }
 /* Ícono que indica el turno */

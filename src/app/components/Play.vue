@@ -1,6 +1,6 @@
 <template>
-    <!-- <div> -->
-    <div v-if="redirectTo === 0">
+    <div>
+    <!-- <div v-if="redirectTo === 0"> -->
       <!-- COMPONENTE BARRA LATERAL Y SUPERIOR-->
       <sidenav :nick="nick" />
       <transition name="fade" mode="out-in">
@@ -14,15 +14,15 @@
         </div>
       </transition>
 
-      <div class="container mt-2">
-          <div class="row hoverable card-panel">
+      <div class="container mt-2-m-and-up">
+          <div class="row hoverable card-panel pt-0-5-on-small-only pb-1-on-small-only">
             <!-- Columna del local -->
             <div class="col s6 m3 l3">
                 <div class="left-align">
-                    <span class="flow-text">LOCAL - X</span>
+                    <span class="flow-text hide-on-small-only">LOCAL</span>
                     <!-- Nick del jugador local -->
                     <div class="flow-text d-flex h-40px align-items-center" >
-                        <i class="material-icons blue-text mr-0-5">person</i>
+                        <i class="material-icons red-text mr-0-5">close</i>
                         {{ p1 === nick ? 'yo' : p1 }}
                     </div>
                     <!-- Ícono que se mostrará cuando el turno sea para el visitante -->
@@ -42,11 +42,11 @@
             <!-- Columna visitante -->
             <div class="col s6 m3 l3 push-m6 push-l6">
                 <div class="right-align">
-                    <span class="flow-text">O - VISITA</span>
+                    <span class="flow-text hide-on-small-only">VISITA</span>
                     <!-- Nick del jugador visitante -->
                       <div class="flow-text d-flex h-40px align-items-center jc-end" >
                         {{ p2 === nick ? 'yo' : p2 }}
-                        <i class="material-icons blue-text ml-0-5">person</i>
+                        <i class="material-icons blue-text ml-0-5">brightness_1</i>
                     </div>
                     <!-- Ícono que se mostrará cuando el turno sea para el visitante -->
                     <transition name="fade">
@@ -360,8 +360,12 @@ export default {
           /* Se dibujan en el tablero los turnos ya dados */
           for (let idx in this.arrTriki) {
             if (this.arrTriki[idx] === "X" || this.arrTriki[idx] === "O") {
-              this.cells[idx].style.fontSize = "200%";
-              this.cells[idx].innerHTML = `<span>${this.arrTriki[idx]}</span>`;
+              /* Estilos de casilla a marcar */
+              let icon = (this.arrTriki[idx] === 'X')
+                      ? `<i class="material-icons red-text">close</i>`
+                      : `<i class="material-icons blue-text">brightness_1</i>`;
+              this.cells[idx].innerHTML = icon;
+              this.cells[idx].children[0].style.fontSize = '3rem';
             }
           }
         }
@@ -482,8 +486,12 @@ export default {
           if (!this.auto) {
             this.turn++;
             /* Estilos a la casilla a marcar */
-            cell.style.fontSize = "200%";
-            cell.innerHTML = `<span>${this.draw}</span>`;
+            let icon = (this.draw === 'X')
+                    ?  `<i class="material-icons red-text">close</i>`
+                    : `<i class="material-icons blue-text">brightness_1</i>`;
+            // cell.style.fontSize = "3rem";
+            cell.innerHTML = icon;
+            cell.children[0].style.fontSize = '3rem';
             cell.style.cursor = "crosshair";
             /* Rellener posición en el arreglo con el símbolo del usuario en turno */
             this.arrTriki[index] = this.draw;
@@ -666,8 +674,12 @@ export default {
             /* ----- ACCIÓN DEL RIVAL (EJECUCIÓN AUTOMÁTICA) ----- */
             this.turn++;
             /* Estilos de casilla a marcar */
-            cell.style.fontSize = "200%";
-            cell.innerHTML = `<span>${this.rivalDraw.draw}</span>`;
+            let icon = (this.rivalDraw.draw === 'X')
+                    ?  `<i class="material-icons red-text">close</i>`
+                    : `<i class="material-icons blue-text">brightness_1</i>`;
+            // cell.style.fontSize = "3rem";
+            cell.innerHTML = icon;
+            cell.children[0].style.fontSize = '3rem';
             cell.style.cursor = "pointer";
             /* Rellenar posición en el arreglo con el símbolo del usuario en turno */
             this.arrTriki[index] = this.rivalDraw.draw;

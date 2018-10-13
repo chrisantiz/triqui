@@ -1,6 +1,6 @@
 <template>
     <div class="container">
-        <div class="chat-container">
+        <!-- <div class="chat-container"> -->
             <!-- Chat -->
             <div class="chat hoverable">
                 <!-- Barra de título -->
@@ -35,7 +35,7 @@
                 <!-- Fin de envío de mensaje -->
             </div>
             <!-- Fin chat -->
-        </div>
+        <!-- </div> -->
     </div>
 </template>
 <script>
@@ -68,7 +68,7 @@ export default {
                 if (className === 'chat-toggle') {
                     this.open = true;
                     /* Para que el chat se ponga por encima del tablero triki */
-                    document.querySelector('.chat-container').style.cssText = 'z-index:100;';
+                    // document.querySelector('.chat-container').style.cssText = 'z-index:100;';
                     /* Esperar el tiempo que tarda en abrir el chat para colocar el foco */
                     setTimeout( () => {
                         document.querySelector('.text-area').focus();
@@ -81,7 +81,7 @@ export default {
             /* Cuando se va a cerrar, poner el chat por debajo del tablero */
             if (!this.open) {
                 setTimeout( () => {
-                    document.querySelector('.chat-container').style.cssText = 'z-index:-1;';
+                    // document.querySelector('.chat-container').style.cssText = 'z-index:-1;';
                 },500);
             }
         },
