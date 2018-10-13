@@ -1,84 +1,82 @@
 <template>
-    <!-- <div v-if="redirectTo === 0"> -->
-    <div>
-        <!-- COMPONENTE BARRA LATERAL Y SUPERIOR-->
-        <sidenav :nick="nick" />
-        <transition name="fade" mode="out-in">
-          <!-- Mostrarse solo cuando el rival se haya ido estando en batalla -->
-          <div v-if="rivalState === 0 && active && !timeout" class="spinner">
-            <div class="wrapper-spinner">
-                <Spinner size="big" />
-                <h2>{{time}}</h2>
-                <h5>Tu rival se ha ido, esperando...</h5>
+    <!-- <div> -->
+    <div v-if="redirectTo === 0">
+      <!-- COMPONENTE BARRA LATERAL Y SUPERIOR-->
+      <sidenav :nick="nick" />
+      <transition name="fade" mode="out-in">
+        <!-- Mostrarse solo cuando el rival se haya ido estando en batalla -->
+        <div v-if="rivalState === 0 && active && !timeout" class="spinner">
+          <div class="wrapper-spinner">
+              <Spinner size="big" />
+              <h2>{{time}}</h2>
+              <h5>Tu rival se ha ido, esperando...</h5>
+          </div>
+        </div>
+      </transition>
+
+      <div class="container mt-2">
+          <div class="row hoverable card-panel">
+            <!-- Columna del local -->
+            <div class="col s6 m3 l3">
+                <div class="left-align">
+                    <span class="flow-text">LOCAL - X</span>
+                    <!-- Nick del jugador local -->
+                    <div class="flow-text d-flex h-40px align-items-center" >
+                        <i class="material-icons blue-text mr-0-5">person</i>
+                        {{ p1 === nick ? 'yo' : p1 }}
+                    </div>
+                    <!-- Ícono que se mostrará cuando el turno sea para el visitante -->
+                    <transition name="fade">
+                      <div v-show="playerTurn === p1" 
+                      class="my-turn">
+                        <!-- Mensaje de ayuda al hacer hover sobre el ícono -->
+                        <i class="material-icons tooltipped"
+                        data-position="bottom"
+                        :data-tooltip="p1===nick ? 'Es tu turno': 'Turno para ' + rivalNick"
+                        >touch_app</i>
+                      </div>
+                    </transition>
+                </div>
+            </div>
+            <!-- Fin columna loca -->
+            <!-- Columna visitante -->
+            <div class="col s6 m3 l3 push-m6 push-l6">
+                <div class="right-align">
+                    <span class="flow-text">O - VISITA</span>
+                    <!-- Nick del jugador visitante -->
+                      <div class="flow-text d-flex h-40px align-items-center jc-end" >
+                        {{ p2 === nick ? 'yo' : p2 }}
+                        <i class="material-icons blue-text ml-0-5">person</i>
+                    </div>
+                    <!-- Ícono que se mostrará cuando el turno sea para el visitante -->
+                    <transition name="fade">
+                      <div v-show="playerTurn === p2" class="my-turn">
+                        <!-- Mensaje de ayuda al hacer hover sobre el ícono -->
+                        <i class="material-icons tooltipped"
+                        data-position="bottom"
+                        :data-tooltip="p2===nick ? 'Es tu turno': 'Turno para ' + rivalNick">
+                        touch_app</i>
+                      </div>
+                    </transition>
+                </div>
+            </div>
+            <!-- Fin columna visitante -->
+            <div class="col s12 m6 l6 pull-m3 pull-l3">
+                <div class="d-flex jc-center">
+                    <table-triki @getaction="getTarget" />
+                </div>
+            </div>
+            <div class="col s12 d-flex jc-end btn-exit">
+              <button class="btn-small red waves-effect waves-light" @click="closeSession">
+                Abandonar
+                <i class="material-icons right">close</i>
+              </button>
             </div>
           </div>
-        </transition>
-
-        <div class="container mt-2">
-            <div class="row hoverable card-panel">
-              <!-- Columna del local -->
-              <div class="col s6 m3 l3">
-                  <div class="left-align">
-                      <span class="flow-text">LOCAL - X</span>
-                      <!-- Nick del jugador local -->
-                      <div class="flow-text d-flex h-40px align-items-center" >
-                          <i class="material-icons blue-text mr-0-5">person</i>
-                          {{ p1 === nick ? 'yo' : p1 }}
-                      </div>
-                      <!-- Ícono que se mostrará cuando el turno sea para el visitante -->
-                      <transition name="fade">
-                        <div v-show="playerTurn === p1" 
-                        class="my-turn">
-                          <!-- Mensaje de ayuda al hacer hover sobre el ícono -->
-                          <i class="material-icons tooltipped"
-                          data-position="bottom"
-                          :data-tooltip="p1===nick ? 'Es tu turno': 'Turno para ' + rivalNick"
-                          >touch_app</i>
-                        </div>
-                      </transition>
-                  </div>
-              </div>
-              <!-- Fin columna loca -->
-              <!-- Columna visitante -->
-              <div class="col s6 m3 l3 push-m6 push-l6">
-                  <div class="right-align">
-                      <span class="flow-text">O - VISITA</span>
-                      <!-- Nick del jugador visitante -->
-                       <div class="flow-text d-flex h-40px align-items-center jc-end" >
-                          {{ p2 === nick ? 'yo' : p2 }}
-                          <i class="material-icons blue-text ml-0-5">person</i>
-                      </div>
-                      <!-- Ícono que se mostrará cuando el turno sea para el visitante -->
-                      <transition name="fade">
-                        <div v-show="playerTurn === p2" class="my-turn">
-                          <!-- Mensaje de ayuda al hacer hover sobre el ícono -->
-                          <i class="material-icons tooltipped"
-                          data-position="bottom"
-                          :data-tooltip="p2===nick ? 'Es tu turno': 'Turno para ' + rivalNick">
-                          touch_app</i>
-                        </div>
-                      </transition>
-                  </div>
-              </div>
-              <!-- Fin columna visitante -->
-              <div class="col s12 m6 l6 pull-m3 pull-l3">
-                  <div class="d-flex jc-center">
-                      <table-triki @getaction="getTarget" />
-                  </div>
-              </div>
-              <div class="col s12 d-flex jc-end btn-exit">
-                <button class="btn-small red waves-effect waves-light" @click="closeSession">
-                  Abandonar
-                  <i class="material-icons right">close</i>
-                </button>
-              </div>
-            </div>
-            
-        </div>
-        <!-- <pre>{{$data}}</pre> -->
-        <chat :user="rivalNick"/> 
-
-        
+          
+      </div>
+      <!-- <pre>{{$data}}</pre> -->
+      <chat :user="rivalNick"/> 
     </div>
 </template>
 <script>
@@ -164,6 +162,8 @@ export default {
     this.thisPath = `${pathname}${params}`;
     /* ------- CUANDO SE ENVÍA DESDE EL HOME (INICIAR UNA PARTIDA) ------- */
     if (localStorage.getItem("nick")) {
+      /* Unirlo a un nuevo canal */
+      socket.emit('joinroom', this.thisPath); 
       /* Permite renderizar la vista actual */
       this.redirectTo = 0;
       /* Obtiene el nick del usuario actual guardada localmente */
@@ -202,6 +202,8 @@ export default {
             if (auth.status.code === 200) {
               /* CUANDO LA RUTA HA SIDO VALIDADA EXITOSAMENTE */
               if (status === 1) {
+                /* Unirlo a un nuevo canal (o al que estaba si salió y volvió) */
+                socket.emit('joinroom', this.thisPath); 
                 /* Indica que la vista actual se renderizará */
                 this.redirectTo = 0;
                 /* Asigna el nick del usario */
@@ -243,8 +245,7 @@ export default {
     }
     /* ------------------- EVENTOS SOCKET.IO ------------------- */
         /* Cuando el rival se va de la partida */
-    socket.on("userlogout", user => {
-      if (user === this.rivalNick) {
+    socket.on("userlogout", () => {
         /* Cuando la partida está inactiva (esperando respuesta) y el rival se va */
         if (!this.active && !this.rivalResponse && !this.timeout) {
           /* Pathname de la página juegos `/play` */
@@ -270,7 +271,6 @@ export default {
           /* Cuando la partida está activa */
           this.rivalState = 0;
         }
-      }
     });
     /* Cuando el rival se va y vuelve aún en partida activa */
     socket.on("entry", user => {

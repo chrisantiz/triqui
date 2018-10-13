@@ -23,8 +23,6 @@ event.on('left', user => {
         }
         /* Cuando los dos usuarios hayan salido la partida habrá terminado */
         if (games[index].p1.status === 0 && games[index].p2.status === 0) {
-            console.log('Los dos usuarios han salido\neliminando la ruta');
-            console.log(games[index].path);
             games.splice(index, 1);
         }
     }

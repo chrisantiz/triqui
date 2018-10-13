@@ -197,7 +197,7 @@ export default {
                             p1: {nick: info.to, status: 1},
                             p2: {nick: info.from, status: 1},
                             path: info.path
-                        }); 
+                        });
                         socket.emit('updateusers', [this.nick, info.to]);   
                         localStorage.setItem('nick', this.nick);
                         if (localStorage.getItem('infoGame')) {
