@@ -1,6 +1,6 @@
 <template>
-    <div>
-    <!-- <div v-if="redirectTo === 0"> -->
+    <!-- <div> -->
+    <div v-if="redirectTo === 0">
       <!-- COMPONENTE BARRA LATERAL Y SUPERIOR-->
       <sidenav :nick="nick" />
       <transition name="fade" mode="out-in">
@@ -46,7 +46,7 @@
                     <!-- Nick del jugador visitante -->
                       <div class="flow-text d-flex h-40px align-items-center jc-end" >
                         {{ p2 === nick ? 'yo' : p2 }}
-                        <i class="material-icons blue-text ml-0-5">brightness_1</i>
+                        <i class="material-icons blue-text ml-0-5">panorama_fish_eye</i>
                     </div>
                     <!-- Ícono que se mostrará cuando el turno sea para el visitante -->
                     <transition name="fade">
@@ -137,7 +137,9 @@ export default {
       /* Respuesta del rival sobre si volver a jugar o no*/
       rivalResponse: false,
       /* Indica si el tiempo de espera (sobre si volver a jugar o no) se ha agotado */
-      timeout: false
+      timeout: false,
+      /* Cuando un usuario abandona la partida estando activa */
+      forceLeft: false
     };
   },
   /* -------------------------- COMPONENTE CREADO ------------------------- */
@@ -244,7 +246,7 @@ export default {
       }
     }
     /* ------------------- EVENTOS SOCKET.IO ------------------- */
-        /* Cuando el rival se va de la partida */
+    /* Cuando el rival se va de la partida */
     socket.on("userlogout", () => {
         /* Cuando la partida está inactiva (esperando respuesta) y el rival se va */
         if (!this.active && !this.rivalResponse && !this.timeout) {
@@ -342,6 +344,17 @@ export default {
         .then( res => window.location.href = '/home' );
       }
     });
+    /* Cuando un usuario abando una partida estando activa */
+    socket.on('forceleft', () => {
+      this.forceLeft = true;
+      swal({
+        icon: 'info',
+        title: '¡Rival interrumpió la partida!',
+        text: `${this.rivalNick} ha decido dejar de jugar.`,
+        buttons: 'Ok'
+      })
+      .then( action => window.location.href = '/home' );
+    });
   },
   mounted() {
     M.Tooltip.init(document.querySelectorAll('.tooltipped'));
@@ -363,7 +376,7 @@ export default {
               /* Estilos de casilla a marcar */
               let icon = (this.arrTriki[idx] === 'X')
                       ? `<i class="material-icons red-text">close</i>`
-                      : `<i class="material-icons blue-text">brightness_1</i>`;
+                      : `<i class="material-icons blue-text">panorama_fish_eye</i>`;
               this.cells[idx].innerHTML = icon;
               this.cells[idx].children[0].style.fontSize = '3rem';
             }
@@ -378,7 +391,7 @@ export default {
     },
     rivalState(val) {
       let interval;
-      if (val === 0 && this.playAgain && !this.timeout) {
+      if (val === 0 && this.playAgain && !this.timeout && !this.forceLeft) {
         document.body.style.height = "100vh";
         document.body.style.overflow = "hidden";
         setTimeout(() => {
@@ -488,11 +501,9 @@ export default {
             /* Estilos a la casilla a marcar */
             let icon = (this.draw === 'X')
                     ?  `<i class="material-icons red-text">close</i>`
-                    : `<i class="material-icons blue-text">brightness_1</i>`;
-            // cell.style.fontSize = "3rem";
+                    : `<i class="material-icons blue-text">panorama_fish_eye</i>`;
             cell.innerHTML = icon;
             cell.children[0].style.fontSize = '3rem';
-            cell.style.cursor = "crosshair";
             /* Rellener posición en el arreglo con el símbolo del usuario en turno */
             this.arrTriki[index] = this.draw;
             /* Verificar si ganó solo desde el turno 5 */
@@ -676,11 +687,9 @@ export default {
             /* Estilos de casilla a marcar */
             let icon = (this.rivalDraw.draw === 'X')
                     ?  `<i class="material-icons red-text">close</i>`
-                    : `<i class="material-icons blue-text">brightness_1</i>`;
-            // cell.style.fontSize = "3rem";
+                    : `<i class="material-icons blue-text">panorama_fish_eye</i>`;
             cell.innerHTML = icon;
             cell.children[0].style.fontSize = '3rem';
-            cell.style.cursor = "pointer";
             /* Rellenar posición en el arreglo con el símbolo del usuario en turno */
             this.arrTriki[index] = this.rivalDraw.draw;
             /* Verificar si ganó solo desde el turno 5 */
@@ -894,12 +903,9 @@ export default {
         closeOnEsc: false
       })
       .then( action => {
-        switch (action) {
-          case true:
-            break;
-        
-          case false:
-            break;
+        if (action === true) {
+          socket.emit('forceleft', this.thisPath);
+          setTimeout( () => window.location.href = '/home', 100);
         }
       });
     }

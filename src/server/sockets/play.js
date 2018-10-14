@@ -6,6 +6,10 @@ const socketIO = io => {
             socket.join(room);
             socket.room = room;
         });
+        socket.on('forceleft', path => {
+            socket.broadcast.to(socket.room).emit('forceleft');
+            event.emit('deletepath', path);
+        });
         socket.on('timeout', nick => {
             socket.broadcast.to(socket.room).emit('timeout', nick);
         });

@@ -8,15 +8,6 @@ body {
     opacity: 0;
 }
 /* ----------------------- ESTILOS chat-container ----------------------------- */
-/*.chat-container {
-	position: absolute;
-	z-index: -1;
-	bottom: 0;
-	overflow: hidden;
-	width: 85%;
-	display: flex;
-	justify-content: flex-end;
-}*/
 .chat {
 	position: absolute;
 	bottom: 0px;
