@@ -1,6 +1,5 @@
 <template>
     <div class="container">
-        <!-- <div class="chat-container"> -->
             <!-- Chat -->
             <div class="chat hoverable">
                 <!-- Barra de título -->
@@ -27,16 +26,16 @@
                 <div class="chat-send-message">
                     <textarea class="text-area" 
                     v-model="message" 
-                    @keydown.enter.prevent="print($event)">
+                    @keydown.enter.prevent="print('me')">
                     </textarea>
-                    <button class="btn green lighten-1" @click="print($event)">
+                    <button class="btn green lighten-1" @click="print('me')">
                     <i class="material-icons">send</i></button>
                 </div>
                 <!-- Fin de envío de mensaje -->
             </div>
             <!-- Fin chat -->
-        <!-- </div> -->
     </div>
+    <!-- Fin container -->
 </template>
 <script>
 export default {
@@ -45,59 +44,79 @@ export default {
         return {
             /* Mensaje que se escribe */
             message: '',
+            rivalMessage: '',
             /* Número de mensajes nuevos */
             numMessages: 0,
             /* Saber si el chat se está abriendo o cerrando */
-            open: false
+            cont: 1
         }
+    },
+    created() {
+      this.socket.on('newmessage', message => {
+          this.rivalMessage = message;
+          /* Imprimir el mensaje del rival */
+          this.print('rival');
+      });  
     },
     methods: {
         /* Mostrar/ocultar el chat */
-        upDown(e) {
+        upDown() {
             /* chat */
             let chat = document.querySelector('.chat');
             /* Cuerpo del chat */
             let body = document.querySelector('.chat-body');
-            /* Mostrar u ocultar el chat */
-            chat.classList.toggle('chat-toggle');
-            /* Bajar la barra de desplazamiento */
-            body.scrollTop = body.scrollTopMax;
-            /* Recorrer las clases que tenga el nodo */
-            for (let className of chat.classList) {
-                /* Cuando contenga esta clase es porque el chat está abierto */
-                if (className === 'chat-toggle') {
-                    this.open = true;
-                    /* Para que el chat se ponga por encima del tablero triki */
-                    // document.querySelector('.chat-container').style.cssText = 'z-index:100;';
-                    /* Esperar el tiempo que tarda en abrir el chat para colocar el foco */
-                    setTimeout( () => {
-                        document.querySelector('.text-area').focus();
-                    },500);
-                    break;
-                } else {
-                    this.open = false;
-                }
-            }
-            /* Cuando se va a cerrar, poner el chat por debajo del tablero */
-            if (!this.open) {
+            /* Cuando se va a abrir el chat */
+            if (this.cont % 2 === 1) {
+                body.scrollTop = body.scrollHeight;
+                chat.style.cssText = 'transform: translateY(0);';
                 setTimeout( () => {
-                    // document.querySelector('.chat-container').style.cssText = 'z-index:-1;';
+                    document.querySelector('.text-area').focus();
                 },500);
+                this.cont++;
+            } else {
+                /* Cuando se va a cerrar */
+                chat.style.cssText = 'transform: translateY(90%);';
+                this.cont--;
             }
         },
         /* Pegar los mensajes escritos en el chat */
-        print() {
-            /* Cuando se haya escrito algo */
-            if (this.message) {
-                /* Donde se pegan los mensajes */
-                let content = document.querySelector('.chat-body');
-                /* Nodo del nuevo mensaje a pegar */
-                let newMessage = document.createElement('div');
+        print(user) {
+            /* Donde se pegan los mensajes */
+            let content = document.querySelector('.chat-body');
+            /* Nodo del nuevo mensaje a pegar */
+            let newMessage = document.createElement('div');
+            if (user === 'me') {
+                /* Cuando se haya escrito algo */
+                if (this.message) {
+                    /* Enviar mensaje al rival */
+                    this.socket.emit('newmessage', this.message);
+                    /* Agregarle sus respectivas clases */
+                    newMessage.setAttribute('class', 'message chat-me');
+                    /* Añadirle contenido HTML */
+                    newMessage.innerHTML = `
+                        <span> ${this.message} </span>
+                        <small> ${this.time()} </small>`;
+                    /* Mantener solo cierta cantidad de mensajes en el chat */
+                    if (content.children.length === 10) {
+                        /* Cuando excede el límite se va eliminando el primero */
+                        content.removeChild(content.children[0]);
+                    } 
+                    /* Añadir el nuevo mensaje al DOM */
+                    content.appendChild(newMessage);
+                    /* Bajar la barra de desplazamiento hasta el nuevo mensaje */
+                    content.scrollTop = content.scrollHeight;
+                    /* Poner foco en el textarea */
+                    document.querySelector('.text-area').focus();
+                    /* Borrar contenido escrito */
+                    this.message = '';
+                    this.numMessages++;
+                }
+            } else if (user === 'rival') {
                 /* Agregarle sus respectivas clases */
-                newMessage.setAttribute('class', 'message chat-me');
+                newMessage.setAttribute('class', 'message chat-rival');
                 /* Añadirle contenido HTML */
                 newMessage.innerHTML = `
-                    <span> ${this.message} </span>
+                    <span> ${this.rivalMessage} </span>
                     <small> ${this.time()} </small>`;
                 /* Mantener solo cierta cantidad de mensajes en el chat */
                 if (content.children.length === 10) {
@@ -107,14 +126,11 @@ export default {
                 /* Añadir el nuevo mensaje al DOM */
                 content.appendChild(newMessage);
                 /* Bajar la barra de desplazamiento hasta el nuevo mensaje */
-                content.scrollTop = content.scrollTopMax;
-                /* Poner foco en el textarea */
-                document.querySelector('.text-area').focus();
+                content.scrollTop = content.scrollHeight;
                 /* Borrar contenido escrito */
-                this.message = '';
+                this.rivalMessage = '';
                 this.numMessages++;
-            }
-            
+            }            
         },
         /* Obtener la hora actual en que se envía un mensaje */
         time() {
@@ -128,6 +144,9 @@ export default {
         user: {
             required: true,
             type: String
+        },
+        socket: {
+            required: true
         }
     }
 }

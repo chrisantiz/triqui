@@ -5,7 +5,7 @@
       <sidenav :nick="nick" />
       <transition name="fade" mode="out-in">
         <!-- Mostrarse solo cuando el rival se haya ido estando en batalla -->
-        <div v-if="rivalState === 0 && active && !timeout" class="spinner">
+        <div v-if="rivalState === 0 && active && !timeout && !forceLeft" class="spinner">
           <div class="wrapper-spinner">
               <Spinner size="big" />
               <h2>{{time}}</h2>
@@ -76,7 +76,7 @@
           
       </div>
       <!-- <pre>{{$data}}</pre> -->
-      <chat :user="rivalNick"/> 
+      <chat :user="rivalNick" :socket="socket"/> 
     </div>
 </template>
 <script>
@@ -96,6 +96,8 @@ export default {
   /* ----------------------------- VARIABLES ------------------------------- */
   data() {
     return {
+      /* Conexión a socket.io para ser usada en el componente Chat */
+      socket: socket,
       /* Nick del usuario actual */
       nick: '',
       /* Nick del rival */

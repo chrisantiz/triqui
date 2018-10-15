@@ -27,6 +27,10 @@ const socketIO = io => {
             socket.broadcast.to(socket.room).emit('entry', nick);
             event.emit('updatestate', nick);
         });
+        /* -------------------- Chat ----------------------- */
+        socket.on('newmessage', message => {
+            socket.broadcast.to(socket.room).emit('newmessage', message);
+        })
         socket.on('disconnect', () => {
             event.emit('left', socket.nick);
             socket.broadcast.to(socket.room).emit('userlogout');

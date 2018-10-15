@@ -1,5 +1,6 @@
 body {
 	overflow: hidden;
+	height: 100vh;
 }
 .fade-enter-active, .fade-leave-active {
     transition: opacity .5s;
@@ -25,9 +26,6 @@ body {
 		width: 90%;
 	}
 }
-.chat-toggle {
-	transform: translateY(0);
-}
 .text-area {
 	resize: none;
 	overflow-y: hidden;
@@ -40,17 +38,18 @@ body {
 .chat-me, .chat-rival {
 	padding: .5rem;
 	border-radius: 15px;
-	color:white;
 }
 .chat-me {
 	align-self: flex-end;
 	border-top-right-radius: 0;
 	background-color: rgb(86, 133, 236);
+	color:white;
 }
 .chat-rival {
 	align-self: flex-start;
 	border-top-left-radius: 0;
-	background-color: rgb(245, 174, 68);
+	background-color: rgb(212, 212, 210);
+	color: #000;
 }
 .chat > .chat-title-bar {
 	cursor: pointer;
