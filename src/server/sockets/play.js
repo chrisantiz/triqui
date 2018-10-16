@@ -30,7 +30,13 @@ const socketIO = io => {
         /* -------------------- Chat ----------------------- */
         socket.on('newmessage', message => {
             socket.broadcast.to(socket.room).emit('newmessage', message);
-        })
+        });
+        socket.on('typing', () => {
+            socket.broadcast.to(socket.room).emit('typing');
+        });
+        socket.on('stoptyping', () => {
+            socket.broadcast.to(socket.room).emit('stoptyping');
+        });
         socket.on('disconnect', () => {
             event.emit('left', socket.nick);
             socket.broadcast.to(socket.room).emit('userlogout');
