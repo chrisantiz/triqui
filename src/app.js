@@ -7,16 +7,17 @@ const express = require('express'),
         viewsDir = path.join(__dirname, 'views'),
         routes = require('./routes'),
         app = express();
-        
+
 app
     .use(express.json())
     .use(express.urlencoded({extended: false}))
     .set('port', port)
     .set('views', viewsDir)
     .use(morgan('dev'))
+    /* Rutas usadas en la API */
+    .use('/api', routes)
     .use(publicDir)
     .use(history())
     .use(publicDir)
-    .use('/api', routes)
 
 module.exports = app;

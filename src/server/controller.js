@@ -40,10 +40,26 @@ const login  = (req, res) => {
             res.json(user);
         })
 }
+/* Actualizar los puntos de un jugador luego de partida jugada */
+const points = async (req, res) => {
+    /* Verificar que quien haga la petición sea un usuario logeado */
+    if (res.auth.entry) {
+        try {
+            /* req.body = {nick:xxx, points:x} */
+            let data = await model.points(req.body);
+            res.json(data);
+        } catch (err) {
+            res.json(err);
+        }
+    } else {
+        res.json(res.auth);
+    }
+};
 
 module.exports = {
     selectAll,
     users,
     insert,
-    login
+    login,
+    points
 }

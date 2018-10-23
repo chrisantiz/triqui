@@ -50,6 +50,8 @@ Router
     .post('/login', ctrl.login)
     // Agregar nuevo usuario
     .post('/insert', ctrl.insert)
+    /* Actualizar los puntos de un jugador luego de una partida */
+    .put('/points', auth, ctrl.points)
     // Obtener todos los usuarios
     .get('/users', ctrl.selectAll)
 
