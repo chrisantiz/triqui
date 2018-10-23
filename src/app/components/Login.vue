@@ -1,6 +1,6 @@
 <template>
     <!-- Cargar solo cuando no se vaya a redireccionar a otra página -->
-    <div v-if="redirectTo === 0 || redirected" class="container">
+    <div v-if="redirectTo === 0 || redirected" class="container" @keypress.enter="sendEnter">
         <h2 class="center">Triki</h2>
         <!-- Fila principar -->
         <div class="row">
@@ -152,7 +152,20 @@ export default {
             }
         }
     },
-    methods:{
+    methods: {
+        /* ----- Ejecutar acciones cuando se presione la tecla enter ----- */
+        sendEnter() {
+            let login = document.querySelector('#login'),
+                register = document.querySelector('#register');
+            /* Cuando esté en el formulario «Login» */
+            if (login.parentNode.className === 'active') {
+                this.login();
+            }
+            /* Cuando esté en el formulario «Register» */
+            if (register.parentNode.className === 'active') {
+                this.register();
+            }
+        },
         /* --------- Método para inicar sesión --------- */
         async login(){
             /* Cuando no se ha escrito el nick */
@@ -238,6 +251,15 @@ export default {
                     classes: 'red'
                 });
             }
+            /* Cuando el nuevo usuario a crear ya existe */
+            if (this.userExists) {
+                document.querySelector('#newUsername').focus();
+                return M.toast({
+                    html: `El nick «${this.newUsername}» ya existe`,
+                    displayLength: 2000,
+                    classes: 'red'
+                });
+            }
             /* Si se cumplen las condiciones, ejecuta la consulta */
             try {
                 let result = await this.axios.post('/api/insert', {
@@ -287,26 +309,26 @@ export default {
             }
         },
         /* ---- Comprobar que el nick que se escribe no esté registrado ---- */
-        validateUser() {
+        async validateUser() {
             // Mientras se esté escribiendo
             if (this.newUsername) {
                 // Tiempo desde la última tecla presionada
                 this.lastTypingTime = (new Date()).getTime();
-                setTimeout( () => {
+                setTimeout( async () => {
                     // Tiempo actual
                     let typingTimer = (new Date()).getTime();
                     // Tiempo trascurrido entre ambos
                     let timeDiff = typingTimer - this.lastTypingTime;
                     // Si el tiempo trascurrido supera los 400ms ejecuta
                     if (timeDiff >= 400) {
-                        this.axios.post('/api/validate', {
-                            username: this.newUsername
-                        })
-                            .then(res => res.data)
-                            .then(data => {
-                                this.userExists = data.exists;
-                            })
-                            .catch( err => console.log(err))
+                        try {
+                            let result = await this.axios.post('/api/validate', {
+                                username: this.newUsername
+                            });
+                            this.userExists = result.data.exists;
+                        } catch (err) {
+                            console.log(err);
+                        }
                     }
                 }, 400)
             } else {
