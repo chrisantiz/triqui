@@ -8,6 +8,13 @@ body {
 .fade-enter, .fade-leave-to /* .fade-leave-active */{
     opacity: 0;
 }
+/* Ícono de estado para verificar si un nick ya existe, LOGIN componente */
+.show-status-icons>i {
+	position: absolute;
+	line-height: 55px;
+	right: 0;
+	z-index: -1;
+}
 /* ----------------------- ESTILOS chat-container ----------------------------- */
 .chat {
 	position: absolute;

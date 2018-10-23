@@ -1,5 +1,6 @@
 const Santz = require('./database');
 const table = 'users';
+
 module.exports = {
     /* Obtener todos o un solo usuario */
     select(id) {

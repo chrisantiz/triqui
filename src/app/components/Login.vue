@@ -7,21 +7,20 @@
             <!-- Columna acordeón -->
             <div class="col s12 m8 l6 push-l3 push-m2">
                 <ul class="collapsible" data-collapsible="accordion">
-                    
                     <!-- Zona login -->
                     <li class="active">
                         <!-- Cabecera -->
                         <div class="collapsible-header blue white-text" id="login" @click="reset($event)">
                             Iniciar Sesión
                         </div>
-                        <!-- Cuerpo --> 
+                        <!-- Cuerpo -->
                         <div class="collapsible-body">
                             <div class="input-field">
-                                <input type="text" v-model="username">
+                                <input type="text" id="username" v-model="username">
                                 <label>Nombre de usuario</label>
                             </div>
                             <div class="input-field">
-                                <input type="password" v-model="pass">
+                                <input type="password" id="pass" v-model="pass">
                                 <label>Contraseña</label>
                             </div>
                             <button class="btn green lighten-1" @click="login">
@@ -37,19 +36,20 @@
                         <!-- Cabecera -->
                         <div class="collapsible-header blue white-text" id="register" @click="reset($event)">
                             Registrarme
-                        </div> 
+                        </div>
                         <!-- Cuerpo -->
                         <div class="collapsible-body">
                             <div class="input-field show-status-icons">
-                                <input type="text" v-model="newUsername" @keyup="validateUser">
-                              
-                                    <show-icon v-if="newUsername && !userExists" icon="check" class="green-text" />
-                                    <show-icon v-else-if="newUsername && userExists" icon="error" class="red-text" />
-                               
+                                <input type="text"
+                                    id="newUsername"
+                                    v-model="newUsername"
+                                    @keyup="validateUser">
+                                    <show-icon v-if="newUsername.length >= 3 && !userExists" icon="check" class="green-text" />
+                                    <show-icon v-else-if="newUsername.length >= 3 && userExists" icon="error" class="red-text" />
                                 <label>Nombre de usuario</label>
                             </div>
                             <div class="input-field">
-                                <input type="password" v-model="newPass">
+                                <input type="password" id="newPass" v-model="newPass">
                                 <label>Contraseña</label>
                             </div>
                             <div class="input-field">
@@ -84,7 +84,6 @@ export default {
             // Validar nick
             lastTypingTime: 0,
             userExists: false,
-        
             userActual: '',
             redirectTo: null
         }
@@ -139,6 +138,7 @@ export default {
     },
     mounted() {
         M.Collapsible.init(document.querySelectorAll('.collapsible'));
+        document.querySelector('#username').focus();
     },
     watch: {
         // Espera para saber si se va a direccionar a otra página
@@ -154,61 +154,134 @@ export default {
     },
     methods:{
         /* --------- Método para inicar sesión --------- */
-        login(){
-            if (this.username.length>=3 && this.pass) {
-                this.axios.post('/api/login', {
+        async login(){
+            /* Cuando no se ha escrito el nick */
+            if (!this.username) {
+                return M.toast({
+                    html: 'El campo «nombre de usuario» es obligatorio',
+                    displayLength: 2000,
+                    classes: 'red'
+                });
+            }
+            /* Cuando el nick tiene menos de 3 carácteres */
+            if (this.username.length < 3) {
+                return M.toast({
+                    html: 'El nick debe tener por lo menos 3 dígitos',
+                    displayLength: 2000,
+                    classes: 'red'
+                });
+            }
+            /* Cuando no se ha escrito la contraseña */
+            if (!this.pass) {
+                return M.toast({
+                    html: 'El campo «contraseña» es obligatorio',
+                    displayLength: 2000,
+                    classes: 'red'
+                });
+            }
+            /* Si se cumplen todas las condiciones, ejecuta la consulta */
+            try {
+                let result = await this.axios.post('/api/login', {
                     nick: this.username,
                     pass: this.pass
-                })
-                .then(res => {
-                    // Si las credenciales son correctas
-                    if(res.data){
-                        // Crea un item en el storage con el token
-                        localStorage.setItem('token', res.data.token);
-                        // Redirige con los datos del usuario
-                        this.$router.push({name:'home', params:{
-                                data: res.data,
-                                redirected: true
-                            }
-                        });
-                    }
-                })
+                });
+                let { data } = result;
+                /* Cuando las credenciales son correctas */
+                if (data.status === 200) {
+                    // Crea un item en el storage con el token
+                    localStorage.setItem('token', result.data.token);
+                    // Redirige con los datos del usuario
+                    this.$router.push({name:'home', params:{
+                            data: result.data,
+                            redirected: true
+                        }
+                    });
+                /* Datos incorrectos */
+                } else {
+                    M.toast({
+                        html: `Error, credenciales incorrectas`,
+                        displayLength: 1500,
+                        classes: "red"
+                    });
+                }
+            } catch (err) {
+                M.toast({
+                    html: `Error interno, no se ha podido verificar tu información`,
+                    displayLength: 1500,
+                    classes: "red"
+                });
             }
         },
         /* ----------- Método para registrar un nuevo usuario ---------- */
-        register() {
-            this.axios.post('/api/insert', {
-                data: {
-                    nick: this.newUsername,
-                    pass: this.newPass
-                }
-            })
-            .then(res => res.data)
-            .then(data => {
-                if (data.status === 'ok') {
+        async register() {
+            /* Cuando no se ha escrito el nick */
+            if (!this.newUsername) {
+                return M.toast({
+                    html: 'El campo «nombre de usuario» es obligatorio',
+                    displayLength: 2000,
+                    classes: 'red'
+                });
+            }
+            /* Cuando el nuevo nick tiene menos de tres carácteres */
+            if (this.newUsername.length < 3) {
+                return M.toast({
+                    html: 'Su nuevo nick debe tener por lo menos 3 dígitos',
+                    displayLength: 2000,
+                    classes: 'red'
+                });
+            }
+            /* Si no se ha escrito la contraseña */
+            if (!this.newPass) {
+                return M.toast({
+                    html: 'El campo «contraseña» es oligatorio',
+                    displayLength: 2000,
+                    classes: 'red'
+                });
+            }
+            /* Si se cumplen las condiciones, ejecuta la consulta */
+            try {
+                let result = await this.axios.post('/api/insert', {
+                    data: { nick: this.newUsername, pass: this.newPass }
+                });
+                /* Cuando se ha creado el nuevo usuario */
+                if (result.data.status === 201) {
                     M.toast({
-                        html: `<h5>Usuario <b>${ this.newUsername }</b> creado</h5>`,
-                        displayLength: 1500,
+                        html: `<h6>Usuario <b>${ this.newUsername }</b> creado, ya puedes logearte</h6>`,
+                        displayLength: 2000,
                         classes: "green"
-                    })
-                    this.newUsername = '';
-                    this.newPass = '';
+                    });
+                    setTimeout( () => {
+                        document.querySelector('#login').click();
+                    }, 1000)
                 } else {
                     M.toast({
                         html: `Error, usuario no creado`,
-                        displayLength: 1500,
+                        displayLength: 2000,
                         classes: "red"
-                    })
+                    });
                 }
-            })
+            } catch (err) {
+                /* Error interno */
+                M.toast({
+                    html: `Error interno, usuario no creado`,
+                    displayLength: 2000,
+                    classes: "red"
+                });
+            }
         },
         /* ----------- Limpiar inputs ----------- */
         reset(e) {
             const input = e.target.id;
             if (input === 'login') {
+                setTimeout( () => {
+                    document.querySelector('#username').focus();
+                }, 300);
                 this.newUsername = '';
                 this.newPass = '';
             } else {
+                setTimeout( () => {
+                    document.querySelector('#newUsername').focus();
+                }, 300);
                 this.username = '';
                 this.pass = '';
             }

@@ -5,7 +5,7 @@ module.exports = (req, res, next) => {
             entry: false,
             data: null,
             status: {
-                code: 302,
+                code: 401,
                 message: 'NO_ENTRY'
             }
         }
