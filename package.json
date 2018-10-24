@@ -5,7 +5,8 @@
   "main": "main.js",
   "scripts": {
     "start": "supervisor main",
-    "dev":"webpack --mode development --watch"
+    "dev": "webpack --mode development --watch",
+    "prod": "webpack --mode production"
   },
   "dependences":{
     "express":"^4.16.3",

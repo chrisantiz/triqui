@@ -3,26 +3,26 @@
             <!-- Chat -->
             <div class="chat hoverable">
                 <!-- Barra de título -->
-                <div class="chat-title-bar blue lighten-4" 
+                <div class="chat-title-bar blue lighten-4"
                     @click="upDown($event)">
                     <div class="user pl-0-5">
                         <i class="material-icons fs-0-8 green-text">brightness_1</i>
                         <span class="pl-0-5">{{ user }}
                             <transition name="fade">
-                                <small 
-                                    style="font-style:italic;" 
+                                <small
+                                    style="font-style:italic;"
                                     v-if="rivalTyping">
                                     está escribiendo ...
                                 </small>
                             </transition>
-                        </span> 
+                        </span>
                     </div>
                     <!-- Muestra de mensajes nuevos -->
                     <div v-if="numMessages" class="alert">
                         <i class="material-icons green-text"
                             style="line-height:36px;">email
                         </i>
-                        <span class="badge" 
+                        <span class="badge"
                             style="min-width:1rem;margin:0;line-height:36px;">
                             {{ numMessages }}
                         </span>
@@ -35,12 +35,13 @@
                 <!-- Fin cuerpo del chat -->
                 <!-- Envío de mensaje -->
                 <div class="chat-send-message">
-                    <textarea class="text-area" 
-                    v-model="message" 
-                    @keydown.enter.prevent="print('me')" 
-                    @input="isTyping">
+                    <textarea class="text-area"
+                    v-model="message"
+                    @keydown.enter.prevent="print('me')"
+                    @input="isTyping"
+                    @focus="chatFocus">
                     </textarea>
-                    <button class="btn green lighten-1" 
+                    <button class="btn green lighten-1"
                         @click="print('me')">
                         <i class="material-icons">send</i>
                     </button>
@@ -111,9 +112,12 @@ export default {
             if (document.querySelector('.no-read')) {
                 body.scrollTop = document.querySelector('.no-read').offsetTop - 50;
             }
-        }); 
+        });
+    },
+    /* ------------------- MÉTODOS --------------------- */
+    methods: {
         /* Cuando se coloca el foco al textarea de envío de mensajes */
-        document.querySelector('.text-area').onfocus = () => {
+        chatFocus() {
             /* Resetear el contador de mensajes no leídos */
             this.numMessages = 0;
             /* Indicar que sí se podrá hacer scroll */
@@ -125,10 +129,7 @@ export default {
                 let node = body.querySelector('.no-read');
                 body.removeChild(node);
             }
-        };
-    },
-    /* ------------------- MÉTODOS --------------------- */
-    methods: {
+        },
         /* Mientras se escribe */
         isTyping(){
             if (!this.typing) {
@@ -219,7 +220,7 @@ export default {
                 if (this.numMessages === 1) {
                     this.firstNode = newMessage;
                 }
-            }            
+            }
         },
         /* Obtener la hora actual en que se envía un mensaje */
         time() {

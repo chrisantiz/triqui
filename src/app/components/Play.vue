@@ -73,10 +73,10 @@
               </button>
             </div>
           </div>
-          
+
       </div>
       <!-- <pre>{{$data}}</pre> -->
-      <chat :user="rivalNick" :socket="socket"/> 
+      <chat :user="rivalNick" :socket="socket"/>
     </div>
 </template>
 <script>
@@ -145,7 +145,7 @@ export default {
     };
   },
   /* -------------------------- COMPONENTE CREADO ------------------------- */
-  created() {
+  async created() {
     /* Preguntar si existe información de una partida activa */
     if (localStorage.getItem("infoGame")) {
       /* Preguntar si existe información de la partida */
@@ -167,7 +167,7 @@ export default {
     /* ------- CUANDO SE ENVÍA DESDE EL HOME (INICIAR UNA PARTIDA) ------- */
     if (localStorage.getItem("nick")) {
       /* Unirlo a un nuevo canal */
-      socket.emit('joinroom', this.thisPath); 
+      socket.emit('joinroom', this.thisPath);
       /* Permite renderizar la vista actual */
       this.redirectTo = 0;
       /* Obtiene el nick del usuario actual guardada localmente */
@@ -184,30 +184,26 @@ export default {
     } else {
       /* ------- CUANDO SE ACCEDE A LA RUTA O ES REDIRECCIONADO ------- */
       // Comprobar si hay un token en el local storage
-      if (localStorage.getItem("token")) {
-        // Se hace una petición para comprobar el token y url
-        this.axios({
-          method: "POST",
-          url: "/api/token",
-          headers: {
-            // Token de seguridad
-            auth: `Bearer ${localStorage.getItem("token")}`
-          },
-          data: {
-            // Ruta actual para comprobar su validez
-            path: this.thisPath
-          }
-        })
-          .then(res => res.data)
-          .then(data => {
+      if (localStorage.getItem('token')) {
+        try {
+            let result = await this.axios({
+                method: 'POST',
+                url: '/api/token',
+                data: {
+                    path: this.thisPath
+                },
+                headers: {
+                    auth: `Bearer ${localStorage.getItem('token')}`
+                }
+            });
             // `auth` es la data del token y `status` la validación del path
-            let { auth, status } = data;
-            /* SI HAY ALGÚN USUARIO CON SESIÓN ACTIVA */
+            let { status, auth } = result.data;
+                        /* SI HAY ALGÚN USUARIO CON SESIÓN ACTIVA */
             if (auth.status.code === 200) {
               /* CUANDO LA RUTA HA SIDO VALIDADA EXITOSAMENTE */
               if (status === 1) {
                 /* Unirlo a un nuevo canal (o al que estaba si salió y volvió) */
-                socket.emit('joinroom', this.thisPath); 
+                socket.emit('joinroom', this.thisPath);
                 /* Indica que la vista actual se renderizará */
                 this.redirectTo = 0;
                 /* Asigna el nick del usario */
@@ -239,8 +235,14 @@ export default {
               /* Redirecciona a inicio */
               this.$router.push({ name: "login" });
             }
-          })
-          .catch(err => console.log(err));
+        } catch (err) {
+            swal({
+              icon: 'error',
+              title: '¡Error interno!',
+              text: 'No se ha podido verificar tu token, vuelve a intentarlo.',
+              buttons: 'Ok'
+            }).then( res => window.location.href = '/home');
+        }
       } else {
         // Si no hay ningún token se manda al login
         this.redirectTo = 1;
@@ -810,7 +812,7 @@ export default {
                     .then( res => {
                       /* Cuando el rival no ha respondido, pero el actual sí */
                       if (!this.rivalResponse && this.rivalState !== 2 && this.myResponse) {
-                        this.timeout = true;  
+                        this.timeout = true;
                         socket.emit('deletepath', this.thisPath);
                         socket.emit('timeout', this.rivalNick);
                         swal({
