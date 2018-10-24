@@ -66,7 +66,6 @@
             <!-- Fin columna acordeón -->
         </div>
         <!-- Fin fila principal -->
-        <!-- <pre>{{$data}}</pre> -->
     </div>
 
 </template>
@@ -81,42 +80,44 @@ export default {
             /* REGISTRAR */
             newUsername: '',
             newPass: '',
-            // Validar nick
+            /* Validar nick */
             lastTypingTime: 0,
             userExists: false,
-            userActual: '',
+            /* Indica si se tiene que renderizar la vista actual */
             redirectTo: null
         }
     },
-    created() {
+    async created() {
         // Cuando no ha sido redireccionado desde otra página
         if(!this.redirected) {
+            /* URL de una partida si la hay */
             let url = (localStorage.getItem('path'))
                     ? localStorage.getItem('path')
                     : null;
+            /* Verificar si existe un token en el localStorage */
             if(localStorage.getItem('token')) {
-                this.axios({
-                    method: 'POST',
-                    url:'/api/token',
-                    data: {
-                        path: url
-                    },
-                    headers: {
-                        auth: `Bearer ${localStorage.getItem('token')}`
-                    }
-                })
-                .then(res => res.data)
-                .then(data => {
-                    let { auth } = data;
+                try {
+                    let result = await this.axios({
+                        method: 'POST',
+                        url: '/api/token',
+                        data: {
+                            path: url
+                        },
+                        headers: {
+                            auth: `Bearer ${localStorage.getItem('token')}`
+                        }
+                    });
+                    /* Información sobre la autenticación del token */
+                    let { auth } = result.data;
                     let status = null;
-
-                    if (url) status = data.status;
-                    // Si hay algún usuario logeado
+                    if (url) status = result.data.status;
+                     // Si hay algún usuario logeado
                     if(auth.status.code === 200) {
                         /* Cuando tiene un juego abierto y disponible */
                         if(status === 1) {
                             window.location.href = url;
                         } else {
+                            /* Indica que no renderize ese componente */
                             this.redirectTo = 1;
                             // Redirige a la página home con los datos del usuario
                             this.$router.push({name:'home', params:{
@@ -125,11 +126,16 @@ export default {
                             }});
                         }
                     } else {
-                        // Carga la página con normalidad
+                        /* No hay usuario logeado, carga la página normalmente */
                         this.redirectTo = 0;
                     }
-                })
-                .catch(err => console.log(err))
+                } catch (err) {
+                    M.toast({
+                        html: '¡Error interno!, no se ha podido verificar el token',
+                        displayLength: 2500,
+                        className: 'red'
+                    })
+                }
             } else {
                 // Carga la página con normalidad
                 this.redirectTo = 0;
@@ -246,7 +252,7 @@ export default {
             /* Si no se ha escrito la contraseña */
             if (!this.newPass) {
                 return M.toast({
-                    html: 'El campo «contraseña» es oligatorio',
+                    html: 'El campo «contraseña» es obligatorio',
                     displayLength: 2000,
                     classes: 'red'
                 });
