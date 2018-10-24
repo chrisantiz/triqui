@@ -1,6 +1,7 @@
 const jwt = require('./jwt');
 module.exports = (req, res, next) => {
-    if(!req.headers.auth) {
+    console.log(req.headers.autorization);
+    if (!req.headers.autorization) {
         res.auth = {
             entry: false,
             data: null,
@@ -11,7 +12,7 @@ module.exports = (req, res, next) => {
         }
         next();
     } else {
-        const token = req.headers.auth.split(' ')[1];
+        const token = req.headers.autorization.split(' ')[1];
         jwt.verify(token)
             .then(data => {
                 res.auth = {

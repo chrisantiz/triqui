@@ -6,7 +6,6 @@ vue.use(vueRouter);
 /* Componentes */
 import Login from '../components/Login.vue';
 import Home from '../components/Home.vue';
-import About from '../components/About.vue';
 import Play from '../components/Play.vue';
 
 const routes = [
@@ -21,12 +20,6 @@ const routes = [
         name: 'home',
         props: true,
         component: Home
-    },
-    {
-        path: '/about',
-        name: 'about',
-        props: true,
-        component: About
     },
     {
         path: '/play/:p1-vs-:p2',

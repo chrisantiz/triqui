@@ -104,7 +104,7 @@ export default {
                             path: url
                         },
                         headers: {
-                            auth: `Bearer ${localStorage.getItem('token')}`
+                            Autorization: `Bearer ${localStorage.getItem('token')}`
                         }
                     });
                     /* Información sobre la autenticación del token */
@@ -142,10 +142,6 @@ export default {
             }
         }
     },
-    mounted() {
-        M.Collapsible.init(document.querySelectorAll('.collapsible'));
-        document.querySelector('#username').focus();
-    },
     watch: {
         // Espera para saber si se va a direccionar a otra página
         redirectTo(val) {
@@ -154,6 +150,7 @@ export default {
                 // Espera a que se cree el nodo
                 setTimeout( () => {
                     M.Collapsible.init(document.querySelectorAll('.collapsible'));
+                    document.querySelector('#username').focus();
                 }, 50)
             }
         }

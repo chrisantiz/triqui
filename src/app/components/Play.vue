@@ -193,7 +193,7 @@ export default {
                     path: this.thisPath
                 },
                 headers: {
-                    auth: `Bearer ${localStorage.getItem('token')}`
+                    Autorization: `Bearer ${localStorage.getItem('token')}`
                 }
             });
             // `auth` es la data del token y `status` la validación del path

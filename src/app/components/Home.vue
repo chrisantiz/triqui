@@ -12,7 +12,7 @@
             <div class="col s12 m8 l6 push-m2 push-l3">
                 <!-- TABLA LISTADO DE USUARIOS -->
                 <table>
-                    <tr 
+                    <tr
                         class="d-flex jc-space-around"
                         v-for="(user, index) in users" :key="index">
                         <!-- Ícono que indica estado de conexión -->
@@ -24,7 +24,7 @@
                         <td class="fs-1-5">{{user.nick}}</td>
                         <!-- Botón para retar -->
                         <td>
-                            <button 
+                            <button
                                 class="btn blue waves-effect waves-light" :disabled="user.fight || bind.waitResponse" @click="challenge(user.nick)">
 
                                 <i class="material-icons right"                 style="font-size:2rem;font-weight:bold">chevron_right
@@ -41,13 +41,13 @@
             <!-- FIN USUARIOS CONECTADOS -->
         </div>
         <!-- FIN CONTENEDOR -->
-        
+
         <!-- Precargador -->
         <transition name="fade" mode="out-in">
             <div v-if="bind.waitResponse" class="spinner">
                 <spinner size="medium" />
-                <button 
-                    class="btn red lighten-1 waves-effect waves-light mt-2" 
+                <button
+                    class="btn red lighten-1 waves-effect waves-light mt-2"
                     @click="cancelChallenge">
                     Cancelar
                 </button>
@@ -64,7 +64,7 @@
                     <h5 class="center">Tu sesión ha caducado.</h5>
                 </div>
                 <div class="modal-footer d-flex jc-center">
-                    <router-link 
+                    <router-link
                         to="/"
                         class="btn red waves-effect waves-light">
                         Salir
@@ -102,7 +102,7 @@ export default {
             bind: {
                 // Permite inhabilitar el botón de retar cuando hay una petición en curso
                 waitResponse: false,
-                active: true 
+                active: true
             }
         }
     },
@@ -122,7 +122,7 @@ export default {
                         path: url
                     },
                     headers: {
-                        auth: `Bearer ${localStorage.getItem('token')}`
+                        Autorization: `Bearer ${localStorage.getItem('token')}`
                     }
                 })
                 .then(res => res.data)
@@ -214,7 +214,7 @@ export default {
                             buttons: false,
                             timer: 2500
                         });
-                    }    
+                    }
                 } else {
                     // Volver activo el botón de reto
                     this.bind.waitResponse = false;
@@ -227,7 +227,7 @@ export default {
                             timer: 2500
                         });
                     }
-                }                
+                }
             }
         })
         /* ----------- Reto entrante ------------- */
@@ -356,7 +356,7 @@ export default {
         closeSession(e) {
             e.preventDefault();
             M.Sidenav.getInstance(document.querySelector('#menu-side')).close();
- 
+
             localStorage.removeItem('token');
             this.$router.push({name: 'login', params: {
                 redirected: true
