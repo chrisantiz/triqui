@@ -84,10 +84,12 @@ export default {
             lastTypingTime: 0,
             userExists: false,
             /* Indica si se tiene que renderizar la vista actual */
-            redirectTo: null
+            redirectTo: null,
+            fromOtherPage: false
         }
     },
     async created() {
+        this.fromOtherPage = this.redirected;
         // Cuando no ha sido redireccionado desde otra página
         if(!this.redirected) {
             /* URL de una partida si la hay */
@@ -152,6 +154,15 @@ export default {
                     M.Collapsible.init(document.querySelectorAll('.collapsible'));
                     document.querySelector('#username').focus();
                 }, 50)
+            }
+        },
+        fromOtherPage(val) {
+            /* Cuando han cerrado sesión */
+            if (val) {
+                setTimeout( () => {
+                    M.Collapsible.init(document.querySelectorAll('.collapsible'));
+                    document.querySelector('#username').focus();
+                }, 50);
             }
         }
     },

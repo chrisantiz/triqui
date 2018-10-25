@@ -2,7 +2,7 @@
     <!-- <div> -->
     <div v-if="redirectTo === 0">
       <!-- COMPONENTE BARRA LATERAL Y SUPERIOR-->
-      <sidenav :nick="nick" />
+      <sidenav :nick="userData.nick" @closesession="closeTotalSession" />
       <transition name="fade" mode="out-in">
         <!-- Mostrarse solo cuando el rival se haya ido estando en batalla -->
         <div v-if="rivalState === 0 && active && !timeout && !forceLeft" class="spinner">
@@ -23,16 +23,16 @@
                     <!-- Nick del jugador local -->
                     <div class="flow-text d-flex h-40px align-items-center" >
                         <i class="material-icons red-text mr-0-5">close</i>
-                        {{ p1 === nick ? 'yo' : p1 }}
+                        {{ p1 === userData.nick ? 'yo' : p1 }}
                     </div>
                     <!-- Ícono que se mostrará cuando el turno sea para el visitante -->
                     <transition name="fade">
-                      <div v-show="playerTurn === p1" 
+                      <div v-show="playerTurn === p1"
                       class="my-turn">
                         <!-- Mensaje de ayuda al hacer hover sobre el ícono -->
                         <i class="material-icons tooltipped"
                         data-position="bottom"
-                        :data-tooltip="p1===nick ? 'Es tu turno': 'Turno para ' + rivalNick"
+                        :data-tooltip="p1===userData.nick ? 'Es tu turno': 'Turno para ' + rivalNick"
                         >touch_app</i>
                       </div>
                     </transition>
@@ -45,7 +45,7 @@
                     <span class="flow-text hide-on-small-only">VISITA</span>
                     <!-- Nick del jugador visitante -->
                       <div class="flow-text d-flex h-40px align-items-center jc-end" >
-                        {{ p2 === nick ? 'yo' : p2 }}
+                        {{ p2 === userData.nick ? 'yo' : p2 }}
                         <i class="material-icons blue-text ml-0-5">panorama_fish_eye</i>
                     </div>
                     <!-- Ícono que se mostrará cuando el turno sea para el visitante -->
@@ -54,7 +54,7 @@
                         <!-- Mensaje de ayuda al hacer hover sobre el ícono -->
                         <i class="material-icons tooltipped"
                         data-position="bottom"
-                        :data-tooltip="p2===nick ? 'Es tu turno': 'Turno para ' + rivalNick">
+                        :data-tooltip="p2===userData.nick ? 'Es tu turno': 'Turno para ' + rivalNick">
                         touch_app</i>
                       </div>
                     </transition>
@@ -98,8 +98,10 @@ export default {
     return {
       /* Conexión a socket.io para ser usada en el componente Chat */
       socket: socket,
-      /* Nick del usuario actual */
-      nick: '',
+      /* Información del usuario actual */
+      userData: {},
+      /* Puntos actuales del jugador */
+      points: 0,
       /* Nick del rival */
       rivalNick: '',
       /* Estado de actividad del rival */
@@ -165,22 +167,22 @@ export default {
     }
     this.thisPath = `${pathname}${params}`;
     /* ------- CUANDO SE ENVÍA DESDE EL HOME (INICIAR UNA PARTIDA) ------- */
-    if (localStorage.getItem("nick")) {
+    if (localStorage.getItem('userData')) {
       /* Unirlo a un nuevo canal */
       socket.emit('joinroom', this.thisPath);
       /* Permite renderizar la vista actual */
       this.redirectTo = 0;
-      /* Obtiene el nick del usuario actual guardada localmente */
-      this.nick = localStorage.getItem("nick");
-      localStorage.removeItem("nick");
+      /* Obtiene la data del usuario actual guardada localmente */
+      this.userData = JSON.parse(localStorage.getItem('userData'));
+      localStorage.removeItem('userData');
       /* El símbolo que pintará cada jugador */
-      this.draw = this.nick === this.p1 ? "X" : "O";
+      this.draw = this.userData.nick === this.p1 ? "X" : "O";
       // Guardar la ruta
       localStorage.setItem("path", this.thisPath);
       /* Nombre del nick del rival */
-      this.rivalNick = this.p1 === this.nick ? this.p2 : this.p1;
+      this.rivalNick = this.p1 === this.userData.nick ? this.p2 : this.p1;
       this.rivalState = 1;
-      socket.emit("entry", this.nick);
+      socket.emit("entry", this.userData.nick);
     } else {
       /* ------- CUANDO SE ACCEDE A LA RUTA O ES REDIRECCIONADO ------- */
       // Comprobar si hay un token en el local storage
@@ -198,7 +200,7 @@ export default {
             });
             // `auth` es la data del token y `status` la validación del path
             let { status, auth } = result.data;
-                        /* SI HAY ALGÚN USUARIO CON SESIÓN ACTIVA */
+            /* SI HAY ALGÚN USUARIO CON SESIÓN ACTIVA */
             if (auth.status.code === 200) {
               /* CUANDO LA RUTA HA SIDO VALIDADA EXITOSAMENTE */
               if (status === 1) {
@@ -206,18 +208,18 @@ export default {
                 socket.emit('joinroom', this.thisPath);
                 /* Indica que la vista actual se renderizará */
                 this.redirectTo = 0;
-                /* Asigna el nick del usario */
-                this.nick = auth.data.nick;
+                /* Asigna la data del usario */
+                this.userData = auth.data;
                 /* Asigna el nick del rival */
-                this.rivalNick = this.p1 === this.nick ? this.p2 : this.p1;
+                this.rivalNick = this.p1 === this.userData.nick ? this.p2 : this.p1;
                 /* Permite saber si el rival sigue activo en la partida */
                 this.rivalState = 1;
                 /* Lo que cada usuario pintará */
-                this.draw = this.nick === this.p1 ? "X" : "O";
+                this.draw = this.userData.nick === this.p1 ? "X" : "O";
                 /* Guardar la ruta/sobrescribir */
                 localStorage.setItem("path", this.thisPath);
                 /* Emite una nueva entrada */
-                socket.emit("entry", this.nick);
+                socket.emit("entry", this.userData.nick);
               } else {
                 /* CUANDO LA RUTA YA HA CADUCADO */
                 swal({
@@ -265,6 +267,7 @@ export default {
             this.rivalState = 2;
             /* Cerrar la alerta actual */
             swal.close();
+            /* QUITARLE PUNTOS AL RIVAL Y SUMARLE AL ACTUAL */
             swal({
               icon: 'error',
               title: '¡Rival ha abandonado!',
@@ -296,7 +299,7 @@ export default {
       /* Usuario con el turno actual */
       this.playerTurn = data.nick;
       /* Obtendrá la data siempre y cuando vaya dirigida a él */
-      if (data.nick === this.nick) {
+      if (data.nick === this.userData.nick) {
         this.auto = true;
         /* Información enviada del rival */
         this.rivalDraw = {
@@ -308,20 +311,39 @@ export default {
       }
     });
     /* Cuando una partida ha finalizado */
-    socket.on("again", data => {
+    socket.on("again", async (data) => {
       /* Verificar si el evento es enviado para mi usuario */
-      if (this.nick === data.nick) {
+      if (this.userData.nick === data.nick) {
         this.rivalResponse = true;
         /* Cuando el rival ha decidido no seguir jugando */
         if (!data.res) {
           swal.close();
           swal({
-            icon: "error",
-            title: "¡No va más!",
-            text: `${this.rivalNick} no quiere jugar más`,
-            buttons: "Ir a inicio"
-          })
-          .then(res => window.location.href = '/home' );
+            icon: 'error',
+            title: '¡No va más!',
+            text: `${this.rivalNick} no quiere jugar más.`,
+            buttons: 'Volver',
+          }).then( res => window.location.href = '/home');
+
+          try {
+            let result = await this.axios.post('/api/points', {
+              nick: this.userData.nick,
+              points: 3
+            });
+            if (result.data.status !== 200) {
+              M.toast({
+                html: '¡Error!\n Lo sentimos, tus puntos no han podido ser actualizados.',
+                displayLength: 2500,
+                classes: 'red'
+              });
+            }
+          } catch (err) {
+            M.toast({
+              html: '¡Error!\n Lo sentimos, tus puntos no han podido ser actualizados.',
+              displayLength: 2500,
+              classes: 'red'
+            });
+          }
         } else {
           /* Cuando quiere volver a jugar */
           if (this.myResponse) {
@@ -336,7 +358,7 @@ export default {
     });
     /* Cuando el jugador actual no respondió sobre una nueva partida */
     socket.on('timeout', nick => {
-      if (nick === this.nick) {
+      if (nick === this.userData.nick) {
         this.timeout = true;
         swal.close();
         swal({
@@ -358,6 +380,13 @@ export default {
         buttons: 'Ok'
       })
       .then( action => window.location.href = '/home' );
+      // setTimeout( () => {
+      //   M.toast({
+      //     html:`Tus nuevos puntos son: <strong>${this.points+3}</strong>`,
+      //     displayLength: 2500,
+      //     classes: 'green'
+      //   });
+      // }, 300);
     });
   },
   mounted() {
@@ -365,10 +394,10 @@ export default {
   },
   /* ---------------- PROPIEDADES OBSERVADORAS DE CAMBIOS ----------------- */
   watch: {
-    nick(val) {
+    userData(val) {
       setTimeout( () => {
         /* Si el usuario que salió fue el actual y la partida sigue activa */
-        if (this.infoGame && this.infoGame.userLeft === this.nick) {
+        if (this.infoGame && this.infoGame.userLeft === this.userData.nick) {
           /* Se le asignan los mismos valores de variables dejados al momento de salir */
           this.arrTriki = this.infoGame.arrTriki;
           this.cells = document.getElementsByClassName("div-td");
@@ -493,7 +522,7 @@ export default {
       /* Índice que corresponde a la posición de la casilla a marcar */
       let index = this.getIndex(cell);
       /* Cuando la partida es activa y el turno corresponde al usuario */
-      if (this.active && this.playerTurn === this.nick) {
+      if (this.active && this.playerTurn === this.userData.nick) {
         /* Verificar que la casilla a marcar esté vacía */
         if (!cell.textContent.length) {
           /* Restaurar valores de respuesta */
@@ -659,7 +688,7 @@ export default {
               // Símbolo que se dibujará en tablero del rival
               draw: this.draw,
               // Nick del usuario que emite el evento
-              emited: this.nick,
+              emited: this.userData.nick,
               // Posición del tablero donde se dibujará
               index: index
             });
@@ -675,13 +704,13 @@ export default {
               }
             } else {
               /* Cuando ganó, se le da el turno para iniciar */
-              this.playerTurn = this.nick;
+              this.playerTurn = this.userData.nick;
             }
             /* ----- Backup de la partida ----- */
             /* Información de la partida al momento de la salida */
             localStorage.setItem( "infoGame", JSON.stringify({
                 arrTriki: this.arrTriki,
-                userLeft: this.nick,
+                userLeft: this.userData.nick,
                 next: this.playerTurn,
                 turn: this.turn
               }) );
@@ -837,7 +866,7 @@ export default {
             if (!this.winner) {
               /* Estando la partida activa */
               if (this.active) {
-                this.playerTurn = this.nick;
+                this.playerTurn = this.userData.nick;
                 this.auto = false;
               } else {
                 /* Partida inactiva y ninguno de los dos ganó */
@@ -851,7 +880,7 @@ export default {
             /* Información de la partida al momento de la salida */
             localStorage.setItem( "infoGame", JSON.stringify({
                 arrTriki: this.arrTriki,
-                userLeft: this.nick,
+                userLeft: this.userData.nick,
                 next: this.playerTurn,
                 turn: this.turn
               }) );
@@ -912,6 +941,17 @@ export default {
           setTimeout( () => window.location.href = '/home', 100);
         }
       });
+    },
+    /* Cerrado total de sesión */
+    closeTotalSession(e) {
+      e.preventDefault();
+      M.Sidenav.getInstance(document.querySelector('#menu-side')).close();
+
+      localStorage.removeItem('token');
+      this.$router.push({name: 'login', params: {
+          redirected: true
+      }});
+      socket.emit('forceleft', this.thisPath);
     }
   },
   filters: {

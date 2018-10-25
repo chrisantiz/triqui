@@ -15,7 +15,7 @@ module.exports = {
     },
     /* Acceder al juego */
     login( { nick, pass } ) {
-        return Santz.select('*').from(table).where('nick', nick).and('pass', pass).exec();
+        return Santz.select('id', 'nick').from(table).where('nick', nick).and('pass', pass).exec();
     },
     /* Actualizar puntos luego de una partida jugada */
     async points( { nick, points } ) {

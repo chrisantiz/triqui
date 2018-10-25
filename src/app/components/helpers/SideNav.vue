@@ -49,7 +49,7 @@ export default {
     name: 'sidenav',
     methods: {
         closeSession(e) {
-            this.$emit('closession', e);
+            this.$emit('closesession', e);
         },
         instance() {
             const instance = M.Sidenav.getInstance(document.querySelectorAll('.sidenav'));

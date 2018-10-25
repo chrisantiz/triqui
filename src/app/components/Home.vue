@@ -1,7 +1,7 @@
 <template>
     <div v-if="redirectTo === 0">
         <!-- RENDERIZAR COMPONENTE BARRA SUPERIOR Y LATERAL -->
-        <sidenav :nick="this.nick" @closession="closeSession" />
+        <sidenav :nick="userData.nick" @closesession="closeSession" />
         <!-- CONTENEDOR -->
         <div class="row container">
             <div class="section">
@@ -17,7 +17,7 @@
                         v-for="(user, index) in users" :key="index">
                         <!-- Ícono que indica estado de conexión -->
                         <td>
-                            <i class="material-icons fs-1 line-height-40 green-text" 
+                            <i class="material-icons fs-1 line-height-40 green-text"
                             :class="{'orange-text' : !bind.active}">brightness_1</i>
                         </td>
                         <!-- Nombre del usuario -->
@@ -29,7 +29,6 @@
 
                                 <i class="material-icons right"                 style="font-size:2rem;font-weight:bold">chevron_right
                                 </i>
-
                                 Retar
                             </button>
                         </td>
@@ -89,10 +88,10 @@ import swal from 'sweetalert';
 export default {
     data() {
         return {
+            /* Datos del usuario actual */
+            userData: {},
             // Usuarios en línea
             users: [],
-            // El nick del usuario actual
-            nick:'',
             // Indica si se tiene que redirigir o no al login
             redirectTo: null,
             // Nick del jugador retado (útil para cancelar un reto)
@@ -106,7 +105,7 @@ export default {
             }
         }
     },
-    created() {
+    async created() {
         // Cuando se carga la página desde la url
         if(!this.redirected) {
             // Comprobar si hay un token en el local storage
@@ -114,24 +113,18 @@ export default {
                 let url = (localStorage.getItem('path'))
                         ? localStorage.getItem('path')
                         : null;
-                // Se hace una petición para comprobar el token
-                this.axios({
-                    method: 'POST',
-                    url:'/api/token',
-                    data: {
-                        path: url
-                    },
-                    headers: {
-                        Autorization: `Bearer ${localStorage.getItem('token')}`
-                    }
-                })
-                .then(res => res.data)
-                .then(data => {
+                try {
+                    let result = await this.axios({
+                        method: 'POST',
+                        url: '/api/token',
+                        data: { path: url },
+                        headers: { Autorization: `Bearer ${localStorage.getItem('token')}` }
+                    });
                     /* Datos de sesión */
-                    let {auth} = data;
+                    let { auth } = result.data;
                     let status = null;
                     /* Información sobre alguna partida activa */
-                    if (url) status = data.status;
+                    if (url) status = result.data.status;
                     // Si hay un usuario con la sesión iniciada y sin expirar
                     if(auth.status.code === 200) {
                         /* Cuando tiene un juego abierto y disponible */
@@ -139,7 +132,8 @@ export default {
                             window.location.href = url;
                         /* Si no, se deja en la página */
                         } else {
-                            this.nick = auth.data.nick;
+                            /* Los datos del usuario */
+                            this.userData = auth.data;
                             this.redirectTo = 0;
                         }
                     } else {
@@ -147,29 +141,45 @@ export default {
                         this.redirectTo = 1;
                         this.$router.push({name:'login'});
                     }
-                })
-                .catch(err => console.log(err))
+                } catch (err) {
+                    /* Si ocurre un error al intentar verificar el token */
+                    swal({
+                        icon: 'error',
+                        title: '¡Token no validado!',
+                        text: 'Error inesperado, no hemos podido verificar tu token de seguridad.\nIntenta volver a iniciar sesión.',
+                        buttons: 'Iniciar Sesión'
+                    }).then( action => {
+                        /* Impedir renderizar el componente */
+                        this.redirectTo = 1;
+                        /* Eliminar el token de seguridad actual */
+                        localStorage.removeItem('token');
+                        /* Redirigir al login */
+                        this.$router.push({ name: 'login' });
+                    });
+                }
             } else {
                 // Si no hay ningún token se manda al login
                 this.redirectTo = 1;
                 this.$router.push({name:'login'});
             }
         } else {
-            // Cuando se he redirigido desde el login
+            /* -------- Cuando se he redirigido desde el login ------ */
+            /* Datos del usuario */
+            this.userData = this.data;
             this.redirectTo = 0;
-            this.nick = this.data.nick;
         }
         /* --------- Evento para cancelar un reto -------- */
         socket.on('cancelchallenge', user => {
-            if (this.nick === user) {
+            if (this.userData.nick === user) {
                 this.challengeCanceled = true;
                 swal.close();
             }
         });
         /* ---------- Todos los usuarios en línea ---------- */
         socket.on('usersonline', users => {
+            console.log(users);
             // Se busca si el usuario actual viene dentro de los usuarios conectados
-            let index = users.findIndex( usr => usr.nick === this.nick);
+            let index = users.findIndex( usr => usr.nick === this.userData.nick);
             if(index !== -1) {
                 // Se quita del arreglo cuando venga
                 users.splice(index, 1);
@@ -179,7 +189,7 @@ export default {
         /* ----- Cerrar sesiones abiertas en otras pestañas ----- */
         socket.on('closesession', user => {
             // Comprobar si quien cerró sesión fue el mismo usuario en otra pestaña
-            if(user === this.nick) {
+            if(user === this.userData.nick) {
                 setTimeout( () => {
                     M.Modal.getInstance(document.querySelector('#userLogOut')).open();
                 }, 2000);
@@ -188,7 +198,7 @@ export default {
         /* ------------------ Respuesta de reto ------------------ */
         socket.on('challengeresponse', info => {
             // Cuando responden el reto
-            if(info.from === this.nick) {
+            if(info.from === this.userData.nick) {
                 // Comprobar si el reto fue respondido
                 if(info.response) {
                     // Se verifica si se aceptó para dirigir al combate
@@ -198,8 +208,9 @@ export default {
                             p2: {nick: info.from, status: 1},
                             path: info.path
                         });
-                        socket.emit('updateusers', [this.nick, info.to]);   
-                        localStorage.setItem('nick', this.nick);
+                        socket.emit('updateusers', [this.userData.nick, info.to]);
+                        /* Guardar datos localmente para su uso en Play.vue */
+                        localStorage.setItem('userData', JSON.stringify(this.userData));
                         if (localStorage.getItem('infoGame')) {
                             localStorage.removeItem('infoGame');
                         }
@@ -233,7 +244,7 @@ export default {
         /* ----------- Reto entrante ------------- */
         socket.on('challenge', info => {
             // Comprobar si el reto es para el usuario actual
-            if(info.from === this.nick) {
+            if(info.from === this.userData.nick) {
                 // Si lo es se muestra una alerta pidiendo aceptar o rechazar
                 swal({
                     title: 'Reto entrante',
@@ -266,7 +277,7 @@ export default {
                         case true:
                             let date = new Date();
                             let id = `${date.getHours()}${date.getMinutes()}${date.getSeconds()}${date.getMilliseconds()}`;
-                            let players = `${info.to}-vs-${this.nick}`;
+                            let players = `${info.to}-vs-${this.userData.nick}`;
 
                             info.path = `/play/${players}?id=${id}`;
                             info.response = true;
@@ -291,10 +302,10 @@ export default {
     },
     watch: {
         /* --------- Abre una nueva sesión de usuario ---------- */
-        nick(val) {
+        userData(val) {
             // Agrega el usuario actual
             socket.emit('adduser', {
-                nick: this.nick,
+                nick: this.userData.nick,
                 fight: false
             });
         },
@@ -321,7 +332,7 @@ export default {
         challengeResponse(info) {
             socket.emit('challengeresponse', {
                 // Quien responde
-                to: this.nick,
+                to: this.userData.nick,
                 // A quien le responde
                 from: info.to,
                 // Verificar si respondió
@@ -333,7 +344,8 @@ export default {
             if (info.response && info.path) {
                 // Para saber que este usuario está en combate
                 this.fight = true;
-                localStorage.setItem('nick', this.nick);
+                /* Guardar en localStorage para su uso en Play.vue */
+                localStorage.setItem('userData', JSON.stringify(this.userData));
                 if (localStorage.getItem('infoGame')) {
                     localStorage.removeItem('infoGame');
                 }
@@ -348,7 +360,7 @@ export default {
             this.challengeCanceled = false;
             // Emitir el evento
             socket.emit('challenge', {
-                to: this.nick,
+                to: this.userData.nick,
                 from: from
             });
         },
@@ -358,9 +370,9 @@ export default {
             M.Sidenav.getInstance(document.querySelector('#menu-side')).close();
 
             localStorage.removeItem('token');
-            this.$router.push({name: 'login', params: {
+            this.$router.push( {name: 'login', params: {
                 redirected: true
-            }});
+            }} );
             socket.emit('closesession');
         }
     },
