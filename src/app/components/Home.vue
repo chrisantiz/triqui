@@ -125,21 +125,65 @@ export default {
                     let status = null;
                     /* Información sobre alguna partida activa */
                     if (url) status = result.data.status;
-                    // Si hay un usuario con la sesión iniciada y sin expirar
-                    if(auth.status.code === 200) {
-                        /* Cuando tiene un juego abierto y disponible */
-                        if(status === 1) {
-                            window.location.href = url;
-                        /* Si no, se deja en la página */
-                        } else {
-                            /* Los datos del usuario */
-                            this.userData = auth.data;
-                            this.redirectTo = 0;
-                        }
-                    } else {
-                        // Si no se manda al login
-                        this.redirectTo = 1;
-                        this.$router.push({name:'login'});
+                    /* Respuesta de verificación del token */
+                    switch (auth.status.code) {
+                        /* Correcto */
+                        case 200:
+                            /* Cuando tiene un juego abierto y disponible */
+                            if(status === 1) {
+                                this.redirectTo = 1;
+                                window.location.href = url;
+                            /* Si no, se deja en la página */
+                            } else {
+                                /* Los datos del usuario */
+                                this.redirectTo = 0;
+                                this.userData = auth.data;
+                            }
+                        break;
+                        /* Token expirado */
+                        case 401:
+                            /* Impedir renderizar el componente */
+                            this.redirectTo = 1;
+                            swal({
+                                icon: 'error',
+                                title: '¡Token expirado!',
+                                text: 'Tu sesión ha caducado, por favor vuelve a iniciar sesión.',
+                                buttons: 'Iniciar sesión',
+                                closeOnClickOutside: false,
+                                closeOnEsc: false
+                            }).then( action => {
+                                if (action) {
+                                    /* Eliminar token de seguridad */
+                                    localStorage.removeItem('token');
+                                    /* Redirigir al login */
+                                    this.$router.push({ name: 'login',
+                                        params: { redirected: true }
+                                    });
+                                }
+                            });
+                        break;
+                        /* Token inválido */
+                        default:
+                            /* Impedir renderizar el componente */
+                            this.redirectTo = 1;
+                            swal({
+                                icon: 'error',
+                                title: '¡Token inválido!',
+                                text: 'El token verificado es incorrecto, por favor vuelve a iniciar sesión.',
+                                buttons: 'Iniciar sesión',
+                                closeOnClickOutside: false,
+                                closeOnEsc: false
+                            }).then( action => {
+                                if (action) {
+                                    /* Eliminar token de seguridad */
+                                    localStorage.removeItem('token');
+                                    /* Redirigir al login */
+                                    this.$router.push({ name: 'login',
+                                        params: { redirected: true }
+                                    });
+                                }
+                            });
+                        break;
                     }
                 } catch (err) {
                     /* Si ocurre un error al intentar verificar el token */
@@ -160,7 +204,7 @@ export default {
             } else {
                 // Si no hay ningún token se manda al login
                 this.redirectTo = 1;
-                this.$router.push({name:'login'});
+                this.$router.push({ name:'login' });
             }
         } else {
             /* -------- Cuando se he redirigido desde el login ------ */
@@ -177,7 +221,6 @@ export default {
         });
         /* ---------- Todos los usuarios en línea ---------- */
         socket.on('usersonline', users => {
-            console.log(users);
             // Se busca si el usuario actual viene dentro de los usuarios conectados
             let index = users.findIndex( usr => usr.nick === this.userData.nick);
             if(index !== -1) {

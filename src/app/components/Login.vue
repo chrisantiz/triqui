@@ -216,10 +216,10 @@ export default {
                 /* Cuando las credenciales son correctas */
                 if (data.status === 200) {
                     // Crea un item en el storage con el token
-                    localStorage.setItem('token', result.data.token);
+                    localStorage.setItem('token', data.token);
                     // Redirige con los datos del usuario
-                    this.$router.push({name:'home', params:{
-                            data: result.data,
+                    this.$router.push({ name:'home', params: {
+                            data: data,
                             redirected: true
                         }
                     });

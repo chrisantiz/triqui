@@ -1,6 +1,5 @@
 const jwt = require('./jwt');
 module.exports = (req, res, next) => {
-    console.log(req.headers.autorization);
     if (!req.headers.autorization) {
         res.auth = {
             entry: false,

@@ -119,7 +119,7 @@ export default {
       /* Guarda las posiciones donde se da click para saber si algún jugador ha ganado */
       arrTriki: new Array(9),
       /* Celdas donde los usuarios darán click */
-      cells: document.getElementsByClassName("div-td"),
+      cells: document.getElementsByClassName('div-td'),
       /* Indica si alguien ha gando */
       winner: false,
       /* La combinación de posiciones en la que un jugador ha ganado */
@@ -149,20 +149,20 @@ export default {
   /* -------------------------- COMPONENTE CREADO ------------------------- */
   async created() {
     /* Preguntar si existe información de una partida activa */
-    if (localStorage.getItem("infoGame")) {
+    if (localStorage.getItem('infoGame')) {
       /* Preguntar si existe información de la partida */
-      this.infoGame = JSON.parse(localStorage.getItem("infoGame"));
+      this.infoGame = JSON.parse(localStorage.getItem('infoGame'));
     }
     /* Por defecto el primer turno será para el local (el retador) */
     this.playerTurn = this.p1;
     // Rellenar el arreglo
-    this.arrTriki.fill("-");
+    this.arrTriki.fill('-');
     // Formatear la ruta a enviar
     let path = new String(location.href);
     let pathname = location.pathname;
-    let params = path.slice(path.indexOf("?"));
+    let params = path.slice(path.indexOf('?'));
 
-    if (params[params.length - 1] === "#") {
+    if (params[params.length - 1] === '#') {
       params = params.substr(0, params.length - 2);
     }
     this.thisPath = `${pathname}${params}`;
@@ -175,14 +175,15 @@ export default {
       /* Obtiene la data del usuario actual guardada localmente */
       this.userData = JSON.parse(localStorage.getItem('userData'));
       localStorage.removeItem('userData');
+      /* Emitir la entrada del usuario */
+      socket.emit('entry', this.userData.nick);
       /* El símbolo que pintará cada jugador */
-      this.draw = this.userData.nick === this.p1 ? "X" : "O";
+      this.draw = this.userData.nick === this.p1 ? 'X' : 'O';
       // Guardar la ruta
-      localStorage.setItem("path", this.thisPath);
+      localStorage.setItem('path', this.thisPath);
       /* Nombre del nick del rival */
       this.rivalNick = this.p1 === this.userData.nick ? this.p2 : this.p1;
       this.rivalState = 1;
-      socket.emit("entry", this.userData.nick);
     } else {
       /* ------- CUANDO SE ACCEDE A LA RUTA O ES REDIRECCIONADO ------- */
       // Comprobar si hay un token en el local storage
@@ -204,29 +205,40 @@ export default {
             if (auth.status.code === 200) {
               /* CUANDO LA RUTA HA SIDO VALIDADA EXITOSAMENTE */
               if (status === 1) {
-                /* Unirlo a un nuevo canal (o al que estaba si salió y volvió) */
-                socket.emit('joinroom', this.thisPath);
-                /* Indica que la vista actual se renderizará */
-                this.redirectTo = 0;
-                /* Asigna la data del usario */
-                this.userData = auth.data;
-                /* Asigna el nick del rival */
-                this.rivalNick = this.p1 === this.userData.nick ? this.p2 : this.p1;
-                /* Permite saber si el rival sigue activo en la partida */
-                this.rivalState = 1;
-                /* Lo que cada usuario pintará */
-                this.draw = this.userData.nick === this.p1 ? "X" : "O";
-                /* Guardar la ruta/sobrescribir */
-                localStorage.setItem("path", this.thisPath);
-                /* Emite una nueva entrada */
-                socket.emit("entry", this.userData.nick);
+                /* Comprobar si el usuario que visita es uno de los dos jugadores */
+                if (auth.data.nick === this.p1 || auth.data.nick === this.p2) {
+                  /* Unirlo a un nuevo canal (o al que estaba si salió y volvió) */
+                  socket.emit('joinroom', this.thisPath);
+                  /* Indica que la vista actual se renderizará */
+                  this.redirectTo = 0;
+                  /* Asigna la data del usario */
+                  this.userData = auth.data;
+                  /* Asigna el nick del rival */
+                  this.rivalNick = this.p1 === this.userData.nick ? this.p2 : this.p1;
+                  /* Permite saber si el rival sigue activo en la partida */
+                  this.rivalState = 1;
+                  /* Lo que cada usuario pintará */
+                  this.draw = this.userData.nick === this.p1 ? 'X' : 'O';
+                  /* Guardar la ruta/sobrescribir */
+                  localStorage.setItem('path', this.thisPath);
+                  /* Emite una nueva entrada */
+                  socket.emit('entry', this.userData.nick);
+                /* Cuando el visitante es un jugador extraño */
+                } else {
+                  swal({
+                    icon: 'warning',
+                    title: '¡Sin acceso!',
+                    text: 'No posees acceso a esta partida, reta a alguien para poder jugar.',
+                    buttons: 'Volver'
+                  }).then( action => this.$router.push({ name: 'home' }));
+                }
               } else {
                 /* CUANDO LA RUTA YA HA CADUCADO */
                 swal({
-                  icon: "warning",
-                  title: "¡Partida caducada!",
-                  text: "No puedes acceder a esta partida",
-                  buttons: "OK"
+                  icon: 'warning',
+                  title: '¡Partida caducada!',
+                  text: 'No puedes acceder a esta partida',
+                  buttons: 'OK'
                 })
                 .then(res  => this.$router.push({ name: 'home' }) );
               }
@@ -235,7 +247,7 @@ export default {
               /* Impide renderizar la vista actual */
               this.redirectTo = 1;
               /* Redirecciona a inicio */
-              this.$router.push({ name: "login" });
+              this.$router.push({ name: 'login' });
             }
         } catch (err) {
             swal({
@@ -248,12 +260,12 @@ export default {
       } else {
         // Si no hay ningún token se manda al login
         this.redirectTo = 1;
-        this.$router.push({ name: "login" });
+        this.$router.push({ name: 'login' });
       }
     }
     /* ------------------- EVENTOS SOCKET.IO ------------------- */
     /* Cuando el rival se va de la partida */
-    socket.on("userlogout", () => {
+    socket.on('userlogout', () => {
         /* Cuando la partida está inactiva (esperando respuesta) y el rival se va */
         if (!this.active && !this.rivalResponse && !this.timeout) {
           /* Pathname de la página juegos `/play` */
@@ -264,6 +276,10 @@ export default {
           if (`/${pathnamePlay}` === `/${pathnameThis}`) {
             /* Eliminación inmediata de la sesión actual */
             socket.emit('deletepath', this.thisPath);
+            /* Eliminación de la partida en el cliente */
+            localStorage.removeItem('path');
+            /* Eliminar información de la última partida jugada */
+            localStorage.removeItem('infoGame');
             this.rivalState = 2;
             /* Cerrar la alerta actual */
             swal.close();
@@ -282,20 +298,20 @@ export default {
         }
     });
     /* Cuando el rival se va y vuelve aún en partida activa */
-    socket.on("entry", user => {
+    socket.on('entry', user => {
       if (this.rivalState === 0 && user === this.rivalNick) {
         this.rivalState = 1;
         setTimeout( () => {
           M.toast({
             html: `<strong class="white-text">¡Tu rival ha vuelto!</strong>`,
-            classes: "green",
+            classes: 'green',
             displayLength: 2000
           });
         }, 800);
       }
     });
     /* Asignar el turno al rival */
-    socket.on("nextturn", data => {
+    socket.on('nextturn', data => {
       /* Usuario con el turno actual */
       this.playerTurn = data.nick;
       /* Obtendrá la data siempre y cuando vaya dirigida a él */
@@ -311,12 +327,16 @@ export default {
       }
     });
     /* Cuando una partida ha finalizado */
-    socket.on("again", async (data) => {
+    socket.on('again', async (data) => {
       /* Verificar si el evento es enviado para mi usuario */
       if (this.userData.nick === data.nick) {
         this.rivalResponse = true;
         /* Cuando el rival ha decidido no seguir jugando */
         if (!data.res) {
+          /* Eliminar la partida del lado del cliente */
+          localStorage.removeItem('path');
+          /* Eliminar información de la última partida jugada */
+          localStorage.removeItem('infoGame');
           swal.close();
           swal({
             icon: 'error',
@@ -324,26 +344,25 @@ export default {
             text: `${this.rivalNick} no quiere jugar más.`,
             buttons: 'Volver',
           }).then( res => window.location.href = '/home');
-
-          try {
-            let result = await this.axios.post('/api/points', {
-              nick: this.userData.nick,
-              points: 3
-            });
-            if (result.data.status !== 200) {
-              M.toast({
-                html: '¡Error!\n Lo sentimos, tus puntos no han podido ser actualizados.',
-                displayLength: 2500,
-                classes: 'red'
-              });
-            }
-          } catch (err) {
-            M.toast({
-              html: '¡Error!\n Lo sentimos, tus puntos no han podido ser actualizados.',
-              displayLength: 2500,
-              classes: 'red'
-            });
-          }
+          // try {
+          //   let result = await this.axios.post('/api/points', {
+          //     nick: this.userData.nick,
+          //     points: 3
+          //   });
+          //   if (result.data.status !== 200) {
+          //     M.toast({
+          //       html: '¡Error!\n Lo sentimos, tus puntos no han podido ser actualizados.',
+          //       displayLength: 2500,
+          //       classes: 'red'
+          //     });
+          //   }
+          // } catch (err) {
+          //   M.toast({
+          //     html: '¡Error!\n Lo sentimos, tus puntos no han podido ser actualizados.',
+          //     displayLength: 2500,
+          //     classes: 'red'
+          //   });
+          // }
         } else {
           /* Cuando quiere volver a jugar */
           if (this.myResponse) {
@@ -360,6 +379,10 @@ export default {
     socket.on('timeout', nick => {
       if (nick === this.userData.nick) {
         this.timeout = true;
+        /* Eliminar la ruta del localStorage */
+        localStorage.removeItem('path');
+        /* Eliminar información de la última partida */
+        localStorage.removeItem('infoGame');
         swal.close();
         swal({
           icon:'error',
@@ -373,6 +396,10 @@ export default {
     /* Cuando un usuario abando una partida estando activa */
     socket.on('forceleft', () => {
       this.forceLeft = true;
+        /* Eliminar la ruta del localStorage */
+        localStorage.removeItem('path');
+        /* Eliminar información de la última partida */
+        localStorage.removeItem('infoGame');
       swal({
         icon: 'info',
         title: '¡Rival interrumpió la partida!',
@@ -400,12 +427,12 @@ export default {
         if (this.infoGame && this.infoGame.userLeft === this.userData.nick) {
           /* Se le asignan los mismos valores de variables dejados al momento de salir */
           this.arrTriki = this.infoGame.arrTriki;
-          this.cells = document.getElementsByClassName("div-td");
+          this.cells = document.getElementsByClassName('div-td');
           this.playerTurn = this.infoGame.next;
           this.turn = this.infoGame.turn;
           /* Se dibujan en el tablero los turnos ya dados */
           for (let idx in this.arrTriki) {
-            if (this.arrTriki[idx] === "X" || this.arrTriki[idx] === "O") {
+            if (this.arrTriki[idx] === 'X' || this.arrTriki[idx] === 'O') {
               /* Estilos de casilla a marcar */
               let icon = (this.arrTriki[idx] === 'X')
                       ? `<i class="material-icons red-text">close</i>`
@@ -418,17 +445,17 @@ export default {
       }, 100);
 
       setTimeout(() => {
-        M.Sidenav.init(document.querySelectorAll(".sidenav"));
-        M.Collapsible.init(document.querySelectorAll(".collapsible"));
+        M.Sidenav.init(document.querySelectorAll('.sidenav'));
+        M.Collapsible.init(document.querySelectorAll('.collapsible'));
       }, 50);
     },
     rivalState(val) {
       let interval;
       if (val === 0 && this.playAgain && !this.timeout && !this.forceLeft) {
-        document.body.style.height = "100vh";
-        document.body.style.overflow = "hidden";
+        document.body.style.height = '100vh';
+        document.body.style.overflow = 'hidden';
         setTimeout(() => {
-          document.querySelector(".wrapper-spinner").classList.toggle("anime");
+          document.querySelector('.wrapper-spinner').classList.toggle('anime');
         }, 600);
 
         setTimeout(() => {
@@ -437,33 +464,37 @@ export default {
             /* Esperar cierta cantidad de tiempo */
             if (this.time < 1) {
               clearInterval(interval);
-              document.querySelector(".wrapper-spinner").style.opacity = "0";
+              document.querySelector('.wrapper-spinner').style.opacity = '0';
               /* Reiniciar el contador */
               this.time = 10;
+              /* Eliminar la ruta del localStorage */
+              localStorage.removeItem('path');
+              /* Eliminar información de la última partida */
+              localStorage.removeItem('infoGame');
               /* Eliminar la ruta actual */
-              socket.emit("deletepath", this.thisPath);
+              socket.emit('deletepath', this.thisPath);
               /* Mostrar una alerta */
               swal({
-                icon: "error",
-                title: "¡Ruta caducada!",
-                text: "Tu rival no volvió, no puedes seguir en partida",
+                icon: 'error',
+                title: '¡Ruta caducada!',
+                text: 'Tu rival no volvió, no puedes seguir en partida',
                 buttons: {
                   ok: {
-                    text: "Aceptar",
-                    className: "btn-small waves-effect waves-light"
+                    text: 'Aceptar',
+                    className: 'btn-small waves-effect waves-light'
                   }
                 }
               }).then(res => {
                   swal.close();
-                  document.body.style.height = "";
-                  document.body.style.overflow = "";
+                  document.body.style.height = '';
+                  document.body.style.overflow = '';
                   window.location.href = '/home';
               });
               /* Redireccionar automáticamente luego de 5s */
               setTimeout(() => {
                 swal.close();
-                document.body.style.height = "";
-                document.body.style.overflow = "";
+                document.body.style.height = '';
+                document.body.style.overflow = '';
                 window.location.href = '/home';
               }, 5000);
             }
@@ -471,8 +502,8 @@ export default {
             if (this.rivalState === 1) {
               clearInterval(interval);
               this.time = 10;
-              document.body.style.height = "";
-              document.body.style.overflow = "";
+              document.body.style.height = '';
+              document.body.style.overflow = '';
             }
           }, 1000);
         }, 500);
@@ -544,26 +575,26 @@ export default {
               let playerWinner = this.playerWinner(this.draw);
               /* Cuando el jugador actual gana */
               if (playerWinner.win) {
-                if (localStorage.getItem("infoGame")) {
-                  localStorage.removeItem("infoGame");
+                if (localStorage.getItem('infoGame')) {
+                  localStorage.removeItem('infoGame');
                 }
                 this.winner = true;
                 this.active = false;
                 this.comb = playerWinner.comb;
                 swal({
-                  icon: "success",
-                  title: "¡Has ganado!",
+                  icon: 'success',
+                  title: '¡Has ganado!',
                   text: `${this.rivalNick} no pudo contigo :)`,
                   buttons: {
                     no: {
-                      text: "No jugar",
+                      text: 'No jugar',
                       value: false,
-                      className: "red"
+                      className: 'red'
                     },
                     ok: {
-                      text: "Volver a jugar",
+                      text: 'Volver a jugar',
                       value: true,
-                      className: "green"
+                      className: 'green'
                     }
                   },
                   closeOnClickOutside: false,
@@ -574,27 +605,32 @@ export default {
                     /* Indicará que el usuario actual ya ha respondido */
                     this.myResponse = true;
                     /* Se elimina información de la partida anterior guardada localmente */
-                    if (localStorage.getItem("infoGame")) {
-                      localStorage.removeItem("infoGame");
+                    if (localStorage.getItem('infoGame')) {
+                      localStorage.removeItem('infoGame');
                     }
                     /* Se le envía la respuesta al rival */
-                    socket.emit("again", { res: true, nick: this.rivalNick });
+                    socket.emit('again', { res: true, nick: this.rivalNick });
                     /* Limpieza del tablero */
                     this.clear();
                     /* Alerta indicando la espera de la respuesta del rival, si no la ha hecho */
                     if (!this.active) {
                       swal({
                         icon: 'info',
-                        text: "Esperando respuesta...",
+                        text: 'Esperando respuesta...',
                         buttons: false,
                         closeOnClickOutside: false,
                         closeOnEsc: false,
                         timer: 10000
                       })
                       .then( res => {
+                        /* Cuando el rival no ha respondido */
                         if (!this.rivalResponse && this.rivalState !== 2 && this.myResponse) {
                           this.timeout = true;
+                          /* Eliminar partida del servidor */
                           socket.emit('deletepath', this.thisPath);
+                          /* Eliminar ruta del localStorage */
+                          localStorage.removeItem('path');
+                          /* Avisarle al rival que el tiempo de espera se agotó */
                           socket.emit('timeout', this.rivalNick);
                           swal({
                             icon: 'error',
@@ -608,10 +644,14 @@ export default {
                     }
                     /* Cuando no quiere volver a jugar */
                   } else if (action === false) {
-                    /* Eliminación de la partida actual */
-                    socket.emit("deletepath", this.thisPath);
+                    /* Eliminar partida del servidor */
+                    socket.emit('deletepath', this.thisPath);
+                    /* Eliminar ruta del localStorage */
+                    localStorage.removeItem('path');
+                    /* Eliminar información de la partida jugada */
+                    localStorage.removeItem('infoGame');
                     /* Envío de respuesta al rival */
-                    socket.emit("again", { res: false, nick: this.rivalNick });
+                    socket.emit('again', { res: false, nick: this.rivalNick });
                     /* Redirección a la página inicio */
                     setTimeout( () => window.location.href = '/home', 100);
                   }
@@ -622,19 +662,19 @@ export default {
             if (this.turn === 9 && !this.winner) {
               this.active = false;
               swal({
-                icon: "info",
-                title: "¡No hay ganador!",
+                icon: 'info',
+                title: '¡No hay ganador!',
                 text: `Ha sido un empate`,
                 buttons: {
                   no: {
-                    text: "No jugar",
+                    text: 'No jugar',
                     value: false,
-                    className: "red"
+                    className: 'red'
                   },
                   ok: {
-                    text: "Volver a jugar",
+                    text: 'Volver a jugar',
                     value: true,
-                    className: "green"
+                    className: 'green'
                   }
                 },
                 closeOnClickOutside: false,
@@ -643,24 +683,31 @@ export default {
                 /* Limpiar el tablero al dar click */
                 if (action === true) {
                   this.myResponse = true;
-                  if (localStorage.getItem("infoGame")) {
-                    localStorage.removeItem("infoGame");
+                  if (localStorage.getItem('infoGame')) {
+                    localStorage.removeItem('infoGame');
                   }
-                  socket.emit("again", { res: true, nick: this.rivalNick });
+                  /* Avisarle al rival que este usuario sí quiere jugar */
+                  socket.emit('again', { res: true, nick: this.rivalNick });
                   this.clear();
+                  /* Esperando la respuesta del rival */
                   if (!this.active) {
                     swal({
-                      icon: "info",
-                      text: "Esperando respuesta...",
+                      icon: 'info',
+                      text: 'Esperando respuesta...',
                       buttons: false,
                       closeOnClickOutside: false,
                       closeOnEsc: false,
                       timer: 10000
                     })
                     .then( res => {
+                      /* Cuando el rival no ha respondido */
                       if (!this.rivalResponse && this.rivalState !== 2 && this.myResponse) {
                         this.timeout = true;
+                        /* Eliminar partida del servidor */
                         socket.emit('deletepath', this.thisPath);
+                        /* Eliminar ruta del localStorage */
+                        localStorage.removeItem('path');
+                        /* Avisarle al rival que el tiempo de espera se agotó */
                         socket.emit('timeout', this.rivalNick);
                         swal({
                           icon: 'error',
@@ -674,15 +721,23 @@ export default {
                       }
                     });
                   }
+                /* Usuario actual ha decidio no seguir jugando */
                 } else if (action === false) {
-                  socket.emit("deletepath", this.thisPath);
-                  socket.emit("again", { res: false, nick: this.rivalNick });
+                  /* Eliminar partida del servidor */
+                  socket.emit('deletepath', this.thisPath);
+                  /* Eliminar ruta del localStorage */
+                  localStorage.removeItem('path');
+                  /* Eliminar información de la partida jugada */
+                  localStorage.removeItem('infoGame');
+                  /* Avisarle al rival la decisión */
+                  socket.emit('again', { res: false, nick: this.rivalNick });
+                  /* Mandar a la página de inicio */
                   setTimeout( () => window.location.href = '/home', 100);
                 }
               });
             }
             /* Emisión de evento para marcar casilla en el tablero del rival */
-            socket.emit("nextturn", {
+            socket.emit('nextturn', {
               // Nick usuario a próximo turno
               nick: this.rivalNick,
               // Símbolo que se dibujará en tablero del rival
@@ -708,12 +763,12 @@ export default {
             }
             /* ----- Backup de la partida ----- */
             /* Información de la partida al momento de la salida */
-            localStorage.setItem( "infoGame", JSON.stringify({
-                arrTriki: this.arrTriki,
-                userLeft: this.userData.nick,
-                next: this.playerTurn,
-                turn: this.turn
-              }) );
+            localStorage.setItem( 'infoGame', JSON.stringify({
+              arrTriki: this.arrTriki,
+              userLeft: this.userData.nick,
+              next: this.playerTurn,
+              turn: this.turn
+            }) );
           } else {
             /* ----- ACCIÓN DEL RIVAL (EJECUCIÓN AUTOMÁTICA) ----- */
             this.turn++;
@@ -733,49 +788,55 @@ export default {
                 this.winner = true;
                 this.active = false;
                 this.comb = playerWinner.comb;
-                if (localStorage.getItem("infoGame")) {
-                  localStorage.removeItem("infoGame");
+                if (localStorage.getItem('infoGame')) {
+                  localStorage.removeItem('infoGame');
                 }
                 swal({
-                  icon: "error",
-                  title: "¡Has perdido!",
+                  icon: 'error',
+                  title: '¡Has perdido!',
                   text: `${this.rivalNick} ha ganado :(`,
                   buttons: {
                     no: {
-                      text: "No jugar",
+                      text: 'No jugar',
                       value: false,
-                      className: "red"
+                      className: 'red'
                     },
                     ok: {
-                      text: "Volver a jugar",
+                      text: 'Volver a jugar',
                       value: true,
-                      className: "green"
+                      className: 'green'
                     }
                   },
                   closeOnClickOutside: false,
                   closeOnEsc: false
                 }).then(action => {
-                  /* Limpiar el tablero al dar click */
+                  /* Cuando el jugador actual quiere volver a jugar */
                   if (action === true) {
                     this.myResponse = true;
-                    if (localStorage.getItem("infoGame")) {
-                      localStorage.removeItem("infoGame");
+                    if (localStorage.getItem('infoGame')) {
+                      localStorage.removeItem('infoGame');
                     }
-                    socket.emit("again", { res: true, nick: this.rivalNick });
+                    socket.emit('again', { res: true, nick: this.rivalNick });
                     this.clear();
+                    /* El rival no ha respondido */
                     if (!this.active) {
                       swal({
-                        icon: "info",
-                        text: "Esperando respuesta...",
+                        icon: 'info',
+                        text: 'Esperando respuesta...',
                         buttons: false,
                         closeOnClickOutside: false,
                         closeOnEsc: false,
                         timer: 10000
                       })
                       .then( res => {
+                        /* Cuando el rival excede el tiempo de espera */
                         if (!this.rivalResponse && this.rivalState !== 2 && this.myResponse) {
                           this.timeout = true;
+                          /* Eliminar partida del servidor */
                           socket.emit('deletepath', this.thisPath);
+                          /* Eliminar ruta del localStorage */
+                          localStorage.removeItem('path');
+                          /* Avisarle al rival que el tiempo se ha agotado */
                           socket.emit('timeout', this.rivalNick);
                           swal({
                             icon: 'error',
@@ -787,9 +848,16 @@ export default {
                         }
                       });
                     }
+                  /* Cuando el jugador actual ha decidido no continuar jugando */
                   } else if (action === false) {
-                    socket.emit("deletepath", this.thisPath);
-                    socket.emit("again", { res: false, nick: this.rivalNick });
+                    /* Eliminar partida del servidor */
+                    socket.emit('deletepath', this.thisPath);
+                    /* Eliminar ruta del localStorage */
+                    localStorage.removeItem('path');
+                    /* Eliminar información de la partida jugada */
+                    localStorage.removeItem('infoGame');
+                    /* Avisarle al rival la decisión */
+                    socket.emit('again', { res: false, nick: this.rivalNick });
                     setTimeout( () => window.location.href = '/home', 100);
                   }
                 });
@@ -798,51 +866,57 @@ export default {
             /* Cuando se ha empatado */
             if (this.turn === 9 && !this.winner) {
               this.active = false;
-              if (localStorage.getItem("infoGame")) {
-                localStorage.removeItem("infoGame");
+              if (localStorage.getItem('infoGame')) {
+                localStorage.removeItem('infoGame');
               }
               swal({
-                icon: "info",
-                title: "¡No hay ganador!",
+                icon: 'info',
+                title: '¡No hay ganador!',
                 text: `Ha sido un empate`,
                 buttons: {
                   no: {
-                    text: "No jugar",
+                    text: 'No jugar',
                     value: false,
-                    className: "red"
+                    className: 'red'
                   },
                   ok: {
-                    text: "Volver a jugar",
+                    text: 'Volver a jugar',
                     value: true,
-                    className: "green"
+                    className: 'green'
                   }
                 },
                 closeOnClickOutside: false,
                 closeOnEsc: false
               }).then(action => {
-                /* Limpiar el tablero al dar click */
+                /* Jugador actual ha decidido seguir jugando */
                 if (action === true) {
                   this.myResponse = true;
-                  if (localStorage.getItem("infoGame")) {
-                    localStorage.removeItem("infoGame");
+                  if (localStorage.getItem('infoGame')) {
+                    localStorage.removeItem('infoGame');
                   }
-                  socket.emit("again", { res: true, nick: this.rivalNick });
+                  /* Avisarle al rival */
+                  socket.emit('again', { res: true, nick: this.rivalNick });
                   this.clear();
+                  /* Esperando la respuesta de él */
                   if (!this.active) {
                     /* Alerta que desaparecerá a los 10s si el rival no responde */
                     swal({
-                      icon: "info",
-                      text: "Esperando respuesta...",
+                      icon: 'info',
+                      text: 'Esperando respuesta...',
                       buttons: false,
                       closeOnClickOutside: false,
                       closeOnEsc: false,
                       timer: 10000
                     })
                     .then( res => {
-                      /* Cuando el rival no ha respondido, pero el actual sí */
+                      /* Cuando el rival no respondió */
                       if (!this.rivalResponse && this.rivalState !== 2 && this.myResponse) {
                         this.timeout = true;
+                        /* Eliminar partida del servidor */
                         socket.emit('deletepath', this.thisPath);
+                        /* Eliminar ruta del localStorage */
+                        localStorage.removeItem('path');
+                        /* Notificarle al rival que excedió el tiempo para responder */
                         socket.emit('timeout', this.rivalNick);
                         swal({
                           icon: 'error',
@@ -854,9 +928,16 @@ export default {
                       }
                     });
                   }
+                /* Si el usuario actual decidió no continuar jugando */
                 } else if (action === false) {
-                  socket.emit("deletepath", this.thisPath);
-                  socket.emit("again", { res: false, nick: this.rivalNick });
+                  /* Eliminar partida del servidor */
+                  socket.emit('deletepath', this.thisPath);
+                  /* Eliminar ruta del localStorage */
+                  localStorage.removeItem('path');
+                  /* Eliminar información de la partida jugada */
+                  localStorage.removeItem('infoGame');
+                  /* Notificar al rival la decisión */
+                  socket.emit('again', { res: false, nick: this.rivalNick });
                   setTimeout( () => window.location.href = '/home', 100);
                 }
               });
@@ -878,7 +959,7 @@ export default {
             }
             /* ----- Backup de la partida ----- */
             /* Información de la partida al momento de la salida */
-            localStorage.setItem( "infoGame", JSON.stringify({
+            localStorage.setItem( 'infoGame', JSON.stringify({
                 arrTriki: this.arrTriki,
                 userLeft: this.userData.nick,
                 next: this.playerTurn,
@@ -894,11 +975,11 @@ export default {
       this.winner = false;
       this.comb = [];
       this.auto = false;
-      this.arrTriki.fill("-");
+      this.arrTriki.fill('-');
       for (let cell in this.cells) {
         if (cell < 9) {
-          this.cells[cell].innerHTML = "";
-          this.cells[cell].style.cursor = "default";
+          this.cells[cell].innerHTML = '';
+          this.cells[cell].style.cursor = 'default';
         }
       }
     },
@@ -979,7 +1060,7 @@ export default {
       methods: {
         /* Enviar el elemento al padre donde se da click */
         getAction(e) {
-          this.$emit("getaction", e.target);
+          this.$emit('getaction', e.target);
         }
       }
     }
@@ -989,13 +1070,13 @@ export default {
     /* Jugador local (retador) */
     p1: {
       type: String,
-      default: "Player1",
+      default: 'Player1',
       required: true
     },
     /* Jugador visitante (retado) */
     p2: {
       type: String,
-      default: "Player2",
+      default: 'Player2',
       required: true
     }
   }
