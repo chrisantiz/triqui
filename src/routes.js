@@ -25,6 +25,8 @@ Router
     /* ------- GET ------- */
     /* Obtener todos los usuarios */
     .get('/users', auth, ctrl.selectAll)
+    /* Obtiene los puntos de un jugador */
+    .get('/points/:id', auth, ctrl.getPoints)
     /* ----- FIN GET ----- */
 
     /* ------- DELETE ------- */

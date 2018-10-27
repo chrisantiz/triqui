@@ -102,7 +102,7 @@ export default {
                 // Permite inhabilitar el botón de retar cuando hay una petición en curso
                 waitResponse: false,
                 active: true
-            }
+            },
         }
     },
     async created() {

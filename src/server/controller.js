@@ -4,6 +4,8 @@ const model = require('./model');
 const jwt = require('./jwt');
 /* Arreglo que contendrá información acerca de los duelos activos */
 let arrGames = require('./events');
+/* Funciones de ayuda */
+const { apiResponse } = require('./helpers');
 
 module.exports = {
     /* ---------- Validación del token ---------- */
@@ -42,7 +44,7 @@ module.exports = {
                 res.json({ exists: false });
             }
         } catch (err) {
-            res.json(new Error(err));
+            res.json(err);
         }
     },
     /* ---------- Método para logearse ---------- */
@@ -62,7 +64,7 @@ module.exports = {
             }
             res.json(user);
         } catch (err) {
-            res.json(new Error(err));
+            res.json(err);
         }
     },
     /* ---------- Agregar un nuevo usuario ---------- */
@@ -81,19 +83,63 @@ module.exports = {
             }
             res.json(exp);
         } catch (err) {
-            res.json(new Error(err));
+            res.json(err);
+        }
+    },
+    async getPoints(req, res) {
+        if (res.auth.entry) {
+            try {
+                let result = await model.getPoints(req.params.id);
+                let points = parseInt(result[0].points);
+                res.json(apiResponse(200, false, false, { points }));
+            } catch (err) {
+                res.json(apiResponse(500, false, false));
+            }
+        } else {
+            res.json(res.auth);
         }
     },
     /* --- Actualizar los puntos de un jugador luego de partida jugada ---- */
     async points(req, res) {
-        /* Verificar que quien haga la petición sea un usuario logeado */
+        /* Validar si el usuario está logeado */
         if (res.auth.entry) {
             try {
-                /* req.body = {nick:xxx, points:x} */
-                let data = await model.points(req.body);
-                res.json(data);
+                let { id, points } = req.body;
+                /* Consultar los puntos actuales */
+                let getResult = await model.getPoints(id);
+                let myPoints = getResult[0].points;
+                points = parseInt(points);
+                /* Cuando tenga cero puntos y haya perdido */
+                if (myPoints < 1 && points === 2) {
+                    return res.json(apiResponse(200, false, false, { points: 0 }));
+                } else {
+                    /* Cuando se ha ganado o empatado */
+                    if (points !== 2) {
+                        myPoints += points;
+                    } else {
+                        /* Cuando se pierde */
+                        myPoints -= points;
+                        /* Colocar a cero cuando el resultado es negativo */
+                        if (myPoints < 0) myPoints = 0;
+                    }
+                }
+                /* Ejecutar sentencia SQL para actualizar los puntos */
+                try {
+                    /* Respuesta de la sentencia SQL */
+                    let setResult = await model.setPoints(id, myPoints);
+                    let resolve = {};
+                    /* Verificar si se ha modificado una fila */
+                    if (setResult.changedRows === 1) {
+                        resolve = apiResponse(200, false, true, { points: myPoints });
+                    } else {
+                        resolve = apiResponse(500, false, false, { points: null });
+                    }
+                    res.json(resolve);
+                } catch (err) {
+                    res.json(apiResponse(500, false, false));
+                }
             } catch (err) {
-                res.json(err);
+                res.json(apiResponse(500, false, false));
             }
         } else {
             res.json(res.auth);
@@ -105,7 +151,7 @@ module.exports = {
             let data = await model.select();
             res.json(data);
         } catch (err) {
-            res.json(new Error(err));
+            res.json(err);
         }
     }
 };

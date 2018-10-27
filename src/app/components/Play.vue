@@ -421,7 +421,26 @@ export default {
   },
   /* ---------------- PROPIEDADES OBSERVADORAS DE CAMBIOS ----------------- */
   watch: {
-    userData(val) {
+    /* Cuando se ha obtenido la información del usuario */
+    async userData(val) {
+      /* Consultar los puntos actuales del jugador */
+      try {
+        let { id } = this.userData;
+        let result = await this.axios({
+          method: 'GET',
+          url: `/api/points/${id}`,
+          headers: {
+            Autorization: `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        if (result.status === 200) {
+          console.log(result.data)
+        } else {
+          console.log(result);
+        }
+      } catch (err) {
+        console.log(err);
+      }
       setTimeout( () => {
         /* Si el usuario que salió fue el actual y la partida sigue activa */
         if (this.infoGame && this.infoGame.userLeft === this.userData.nick) {

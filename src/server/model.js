@@ -1,6 +1,12 @@
 const Santz = require('./database');
 const table = 'users';
-
+function PointError() {
+    this.status = 500;
+    this.points = null;
+}
+function CreateDataError() {
+    this.status = 500;
+}
 module.exports = {
     /* Obtener todos o un solo usuario */
     select(id) {
@@ -17,51 +23,13 @@ module.exports = {
     login( { nick, pass } ) {
         return Santz.select('id', 'nick').from(table).where('nick', nick).and('pass', pass).exec();
     },
+    /* Obtener los puntos de un jugador */
+    getPoints(id) {
+        return Santz.select('points').from(table).where('id', id).exec();
+    },
     /* Actualizar puntos luego de una partida jugada */
-    async points( { nick, points } ) {
-        try {
-            points = parseInt(points);
-            /* Obtener los puntos actuales del jugador */
-            let total = await Santz.select('points').from(table).where('nick', nick).exec();
-            let myPoints = parseInt(total[0].points);
-            /* Cuando tenga cero puntos y haya perdido */
-            if (myPoints < 1 && points === 2) {
-                return { status: 200, points: myPoints };
-            } else {
-                /* Cuando se ha ganado o empatado */
-                if (points !== 2) {
-                    myPoints += points;
-                } else {
-                    /* Cuando se pierde */
-                    myPoints -= points;
-                    /* Colocar a cero cuando el resultado es negativo */
-                    if (myPoints < 0) {
-                        myPoints = 0;
-                    }
-                }
-                /* Actualizar los puntos */
-                try {
-                    /* Respuesta de la sentencia SQL */
-                    let result = await Santz
-                                        .update(table)
-                                        .values( {points: myPoints} )
-                                        .where('nick', nick)
-                                        .exec();
-                    let exp = {};
-                    /* Verificar si se ha modificado una fila */
-                    if (result.changedRows === 1) {
-                        exp = { status: 200, points: myPoints };
-                    } else {
-                        exp = { status: 500, points: null };
-                    }
-                    return exp;
-                } catch (err) {
-                    return { status: 500, points: null };
-                }
-            }
-        } catch (err) {
-            return { status: 500, points: null };
-        }
+    setPoints(id, points) {
+        return Santz.update(table).values({ points }).where('id', id).exec();
     },
     /* Almacenar los resultados de una partida en concreto */
     setHistory(data) {
