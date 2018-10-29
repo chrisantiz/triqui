@@ -190,7 +190,7 @@ export default {
                     swal({
                         icon: 'error',
                         title: '¡Token no validado!',
-                        text: 'Error inesperado, no hemos podido verificar tu token de seguridad.\nIntenta volver a iniciar sesión.',
+                        text: 'Error inesperado, no hemos podido verificar tu token de seguridad. Intenta volver a iniciar sesión.',
                         buttons: 'Iniciar Sesión'
                     }).then( action => {
                         /* Impedir renderizar el componente */

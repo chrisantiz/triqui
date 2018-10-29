@@ -100,7 +100,7 @@ module.exports = {
         }
     },
     /* --- Actualizar los puntos de un jugador luego de partida jugada ---- */
-    async points(req, res) {
+    async setPoints(req, res) {
         /* Validar si el usuario está logeado */
         if (res.auth.entry) {
             try {

@@ -19,7 +19,7 @@ Router
 
     /* ------- PUT ------- */
     /* Actualizar los puntos de un jugador luego de una partida */
-    .put('/points', auth, ctrl.points)
+    .put('/points', auth, ctrl.setPoints)
     /* ----- FIN PUT ----- */
 
     /* ------- GET ------- */

@@ -101,7 +101,7 @@ export default {
       /* Información del usuario actual */
       userData: {},
       /* Puntos actuales del jugador */
-      points: 0,
+      points: null,
       /* Nick del rival */
       rivalNick: '',
       /* Estado de actividad del rival */
@@ -344,25 +344,6 @@ export default {
             text: `${this.rivalNick} no quiere jugar más.`,
             buttons: 'Volver',
           }).then( res => window.location.href = '/home');
-          // try {
-          //   let result = await this.axios.post('/api/points', {
-          //     nick: this.userData.nick,
-          //     points: 3
-          //   });
-          //   if (result.data.status !== 200) {
-          //     M.toast({
-          //       html: '¡Error!\n Lo sentimos, tus puntos no han podido ser actualizados.',
-          //       displayLength: 2500,
-          //       classes: 'red'
-          //     });
-          //   }
-          // } catch (err) {
-          //   M.toast({
-          //     html: '¡Error!\n Lo sentimos, tus puntos no han podido ser actualizados.',
-          //     displayLength: 2500,
-          //     classes: 'red'
-          //   });
-          // }
         } else {
           /* Cuando quiere volver a jugar */
           if (this.myResponse) {
@@ -395,25 +376,31 @@ export default {
     });
     /* Cuando un usuario abando una partida estando activa */
     socket.on('forceleft', () => {
+      /* Añadirle 3 puntos al usuario */
+      this.updatePoints(this.userData.id, 3);
       this.forceLeft = true;
-        /* Eliminar la ruta del localStorage */
-        localStorage.removeItem('path');
-        /* Eliminar información de la última partida */
-        localStorage.removeItem('infoGame');
+      /* Eliminar la ruta del localStorage */
+      localStorage.removeItem('path');
+      /* Eliminar información de la última partida */
+      localStorage.removeItem('infoGame');
+      /* Contenido de la alerta */
+      const node = document.createElement('div');
+      node.innerHTML = `
+          <span>${this.rivalNick} ha decidido dejar de jugar, por lo tanto se te otorgan 3 puntos.</span>
+          <h5 class="center-align green-text"># ${this.points+3} pts</h5>
+      `;
       swal({
-        icon: 'info',
-        title: '¡Rival interrumpió la partida!',
-        text: `${this.rivalNick} ha decido dejar de jugar.`,
-        buttons: 'Ok'
+          icon: 'info',
+          title: '¡+3 puntos, tu rival abandonó!',
+          content: node,
+          buttons: {
+            ok: {
+              text: 'Ok',
+              className: 'btn green'
+            }
+          }
       })
       .then( action => window.location.href = '/home' );
-      // setTimeout( () => {
-      //   M.toast({
-      //     html:`Tus nuevos puntos son: <strong>${this.points+3}</strong>`,
-      //     displayLength: 2500,
-      //     classes: 'green'
-      //   });
-      // }, 300);
     });
   },
   mounted() {
@@ -421,6 +408,9 @@ export default {
   },
   /* ---------------- PROPIEDADES OBSERVADORAS DE CAMBIOS ----------------- */
   watch: {
+    points(val) {
+      console.log(`Mis puntos actuales son: ${val}`);
+    },
     /* Cuando se ha obtenido la información del usuario */
     async userData(val) {
       /* Consultar los puntos actuales del jugador */
@@ -434,12 +424,20 @@ export default {
           }
         });
         if (result.status === 200) {
-          console.log(result.data)
+          this.points = result.data.data.points;
         } else {
-          console.log(result);
+          M.toast({
+            html: `<p>¡Error!</p> Lo sentimos, no pudimos obtener tus puntos actuales.`,
+            displayLength: 2500,
+            classes: 'red'
+          });
         }
       } catch (err) {
-        console.log(err);
+        M.toast({
+          html: `<p>¡Error!</p> lo sentimos, no pudimos obtener tus puntos actuales.`,
+          displayLength: 2500,
+          classes: 'red'
+        });
       }
       setTimeout( () => {
         /* Si el usuario que salió fue el actual y la partida sigue activa */
@@ -531,6 +529,36 @@ export default {
   },
   /* ----------------------- MÉTODOS DEL COMPONENTE ----------------------- */
   methods: {
+    /* Actualizar los puntos de un usuario */
+    async updatePoints(id, points) {
+      try {
+        let result = await this.axios({
+          method: 'PUT',
+          url: '/api/points',
+          data: {
+            id,
+            points
+          },
+          headers: {
+            Autorization: `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        let { data } = result;
+        if (data.status !== 200) {
+          M.toast({
+            html: `<p>¡Error!</p> lo sentimos, no pudimos actualizar tus puntos.`,
+            displayLength: 2500,
+            classes: 'red'
+          });
+        }
+      } catch (err) {
+        M.toast({
+          html: `<p>¡Error!</p> lo sentimos, no pudimos actualizar tus puntos.`,
+          displayLength: 2500,
+          classes: 'red'
+        });
+      }
+    },
     /* Saber si el jugador actual ganó */
     playerWinner(player) {
       // Combinaciones ganadoras
@@ -1015,10 +1043,22 @@ export default {
     },
     /* Mensaje de confirmación al intentar abandonar una partida */
     closeSession() {
+      /* Quitarle 2 puntos al usuario que abandona */
+      this.updatePoints(this.userData.id, 2);
+      /* Contenido de la alerta */
+      const node = document.createElement('div');
+      node.innerHTML = `
+          <h6 class="red-text">
+            <strong>¡-2 puntos! ¿Estás seguro de abandonar la partida?</strong>
+          </h6>
+          <span>
+            Si abandonas la partida ahorita se te quitarán 2 puntos y tu rival obtendrá 3.
+          </span>
+      `;
       swal({
         title: '¡Abandonar partida!',
         icon: 'warning',
-        text: '¿Estás seguro de abandonar la partida?',
+        content: node,
         dangerMode: true,
         buttons: {
           no: {
