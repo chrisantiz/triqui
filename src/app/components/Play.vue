@@ -2,7 +2,7 @@
     <!-- <div> -->
     <div v-if="redirectTo === 0">
       <!-- COMPONENTE BARRA LATERAL Y SUPERIOR-->
-      <sidenav :nick="userData.nick" @closesession="closeTotalSession" />
+      <sidenav :nick="userData.nick" :points="points"  @closesession="closeTotalSession" />
       <transition name="fade" mode="out-in">
         <!-- Mostrarse solo cuando el rival se haya ido estando en batalla -->
         <div v-if="rivalState === 0 && active && !timeout && !forceLeft" class="spinner">
@@ -234,13 +234,13 @@ export default {
                 }
               } else {
                 /* CUANDO LA RUTA YA HA CADUCADO */
-                swal({
-                  icon: 'warning',
-                  title: '¡Partida caducada!',
-                  text: 'No puedes acceder a esta partida',
-                  buttons: 'OK'
-                })
-                .then(res  => this.$router.push({ name: 'home' }) );
+                // swal({
+                //   icon: 'warning',
+                //   title: '¡Partida caducada!',
+                //   text: 'No puedes acceder a esta partida',
+                //   buttons: 'OK'
+                // })
+                // .then(res  => this.$router.push({ name: 'home' }) );
               }
             } else {
               /* CUANDO LA SESIÓN HA EXPIRADO */
@@ -408,9 +408,6 @@ export default {
   },
   /* ---------------- PROPIEDADES OBSERVADORAS DE CAMBIOS ----------------- */
   watch: {
-    points(val) {
-      console.log(`Mis puntos actuales son: ${val}`);
-    },
     /* Cuando se ha obtenido la información del usuario */
     async userData(val) {
       /* Consultar los puntos actuales del jugador */
@@ -462,7 +459,6 @@ export default {
       }, 100);
 
       setTimeout(() => {
-        M.Sidenav.init(document.querySelectorAll('.sidenav'));
         M.Collapsible.init(document.querySelectorAll('.collapsible'));
       }, 50);
     },

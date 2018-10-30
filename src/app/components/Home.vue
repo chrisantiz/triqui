@@ -1,7 +1,7 @@
 <template>
     <div v-if="redirectTo === 0">
         <!-- RENDERIZAR COMPONENTE BARRA SUPERIOR Y LATERAL -->
-        <sidenav :nick="userData.nick" @closesession="closeSession" />
+        <sidenav :nick="userData.nick" :points="points" @closesession="closeSession" />
         <!-- CONTENEDOR -->
         <div class="row container">
             <div class="section">
@@ -90,6 +90,8 @@ export default {
         return {
             /* Datos del usuario actual */
             userData: {},
+            /* Puntos del usuario */
+            points: null,
             // Usuarios en línea
             users: [],
             // Indica si se tiene que redirigir o no al login
@@ -102,7 +104,7 @@ export default {
                 // Permite inhabilitar el botón de retar cuando hay una petición en curso
                 waitResponse: false,
                 active: true
-            },
+            }
         }
     },
     async created() {
@@ -345,7 +347,33 @@ export default {
     },
     watch: {
         /* --------- Abre una nueva sesión de usuario ---------- */
-        userData(val) {
+        async userData(val) {
+            /* Consultar los puntos actuales del jugador */
+            try {
+                let { id } = this.userData;
+                let result = await this.axios({
+                    method: 'GET',
+                    url: `/api/points/${id}`,
+                    headers: {
+                        Autorization: `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+                if (result.status === 200) {
+                    this.points = result.data.data.points;
+                } else {
+                    M.toast({
+                        html: `<p>¡Error!</p> Lo sentimos, no pudimos obtener tus puntos actuales.`,
+                        displayLength: 2500,
+                        classes: 'red'
+                    });
+                }
+            } catch (err) {
+                M.toast({
+                    html: `<p>¡Error!</p> lo sentimos, no pudimos obtener tus puntos actuales.`,
+                    displayLength: 2500,
+                    classes: 'red'
+                });
+            }
             // Agrega el usuario actual
             socket.emit('adduser', {
                 nick: this.userData.nick,
@@ -357,7 +385,7 @@ export default {
             if(val === 0) {
                 // Cuando no se va a redirigir
                 setTimeout( () => {
-                    M.Sidenav.init(document.querySelectorAll('.sidenav'));
+                    // M.Sidenav.init(document.querySelectorAll('.sidenav'));
                     M.Modal.init(document.querySelectorAll('.modal'),{dismissible:false});
                 }, 100)
             }

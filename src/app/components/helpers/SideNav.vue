@@ -35,6 +35,12 @@
                 </a>
             </li>
             <li>
+                <a href="#" @click="instance">
+                    <i class="material-icons orange-text">grade</i>
+                    {{ points }} {{ points > 1 ? 'puntos' : 'punto' }}
+                </a>
+            </li>
+            <li>
                 <a href="#" @click="closeSession($event)">
                     <i class="material-icons red-text">close</i>
                     Cerrar sesión
@@ -47,12 +53,15 @@
 <script>
 export default {
     name: 'sidenav',
+    mounted() {
+        M.Sidenav.init(document.querySelector('.sidenav'));
+    },
     methods: {
         closeSession(e) {
             this.$emit('closesession', e);
         },
         instance() {
-            const instance = M.Sidenav.getInstance(document.querySelectorAll('.sidenav'));
+            const instance = M.Sidenav.getInstance(document.querySelector('.sidenav'));
             instance.close();
         }
     },
@@ -60,6 +69,10 @@ export default {
         nick: {
             type: String,
             default: 'Nickname'
+        },
+        points: {
+            type: Number,
+            default: 1
         }
     }
 }
