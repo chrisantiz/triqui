@@ -625,12 +625,14 @@ export default {
                 if (localStorage.getItem('infoGame')) {
                   localStorage.removeItem('infoGame');
                 }
+                /* Actualizar los puntos */
+                this.updatePoints(this.userData.id, 3);
                 this.winner = true;
                 this.active = false;
                 this.comb = playerWinner.comb;
                 swal({
                   icon: 'success',
-                  title: '¡Has ganado!',
+                  title: '¡+3 puntos, has ganado!',
                   text: `${this.rivalNick} no pudo contigo :)`,
                   buttons: {
                     no: {
@@ -707,10 +709,12 @@ export default {
             }
             /* Cuando se ha empatado */
             if (this.turn === 9 && !this.winner) {
+              /* Actualizar los puntos */
+              this.updatePoints(this.userData.id, 1);
               this.active = false;
               swal({
                 icon: 'info',
-                title: '¡No hay ganador!',
+                title: '¡+1 punto, no hay ganador!',
                 text: `Ha sido un empate`,
                 buttons: {
                   no: {
@@ -832,6 +836,8 @@ export default {
               let playerWinner = this.playerWinner(this.rivalDraw.draw);
               /* Cuando ganó el rival */
               if (playerWinner.win) {
+                /* Actualizar los puntos */
+                this.updatePoints(this.userData.id, 2);
                 this.winner = true;
                 this.active = false;
                 this.comb = playerWinner.comb;
@@ -840,7 +846,7 @@ export default {
                 }
                 swal({
                   icon: 'error',
-                  title: '¡Has perdido!',
+                  title: '¡-2 puntos, has perdido!',
                   text: `${this.rivalNick} ha ganado :(`,
                   buttons: {
                     no: {
@@ -912,13 +918,15 @@ export default {
             }
             /* Cuando se ha empatado */
             if (this.turn === 9 && !this.winner) {
+              /* Actualizar puntos */
+              this.updatePoints(this.userData.id, 1);
               this.active = false;
               if (localStorage.getItem('infoGame')) {
                 localStorage.removeItem('infoGame');
               }
               swal({
                 icon: 'info',
-                title: '¡No hay ganador!',
+                title: '¡+1 punto, no hay ganador!',
                 text: `Ha sido un empate`,
                 buttons: {
                   no: {
