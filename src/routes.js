@@ -20,6 +20,8 @@ Router
     /* ------- PUT ------- */
     /* Actualizar los puntos de un jugador luego de una partida */
     .put('/points', auth, ctrl.setPoints)
+    /* Modificar historial de datos de las partidas */
+    .put('/match', auth, ctrl.setMatch)
     /* ----- FIN PUT ----- */
 
     /* ------- GET ------- */
@@ -27,6 +29,8 @@ Router
     .get('/users', auth, ctrl.selectAll)
     /* Obtiene los puntos de un jugador */
     .get('/points/:id', auth, ctrl.getPoints)
+    /* Obtener información del historial de partidas */
+    .get('/match/:id', auth, ctrl.getMatch)
     /* ----- FIN GET ----- */
 
     /* ------- DELETE ------- */

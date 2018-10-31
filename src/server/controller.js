@@ -145,6 +145,36 @@ module.exports = {
             res.json(res.auth);
         }
     },
+    /* Obtener datos de las partidas */
+    async getMatch(req, res) {
+        if (res.auth.entry) {
+            try {
+                let result = await model.getMatch(req.params.id);
+                res.json(apiResponse(200, false, false, result[0]));
+            } catch (err) {
+                res.json(apiResponse(500, false, false));
+            }
+        } else {
+            res.json(res.auth);
+        }
+    },
+    /* Cambiar información de las partidas */
+    async setMatch(req, res) {
+        if (res.auth.entry) {
+            try {
+                let result = await model.setMatch(req.body);
+                if(result.changedRows === 1) {
+                    res.json(apiResponse(200, false, true));
+                } else {
+                    res.json(apiResponse(500, false, false));
+                }
+            } catch (err) {
+                res.json(apiResponse(500, false, false));
+            }
+        } else {
+            res.json(res.auth);
+        }
+    },
     /* ---------- Obtener todos los usuarios ---------- */
     async selectAll(req, res) {
         try {

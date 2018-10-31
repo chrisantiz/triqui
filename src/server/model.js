@@ -31,6 +31,14 @@ module.exports = {
     setPoints(id, points) {
         return Santz.update(table).values({ points }).where('id', id).exec();
     },
+    /* Obtener información de las partidas */
+    getMatch(id) {
+        return Santz.select('pj', 'pg', 'pp', 'pe', 'pi').from(table).where('id', id).exec();
+    },
+    /* Actualizar información de las partidas */
+    setMatch({ id, data }) {
+        return Santz.update(table).values(data).where('id', id).exec();
+    },
     /* Almacenar los resultados de una partida en concreto */
     setHistory(data) {
         /* local, visit, winner, _date */
