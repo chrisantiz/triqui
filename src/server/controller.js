@@ -162,7 +162,29 @@ module.exports = {
     async setMatch(req, res) {
         if (res.auth.entry) {
             try {
-                let result = await model.setMatch(req.body);
+                /* Nombre de la columna a incrementar */
+                const { affectRow } = req.body;
+                const { id } = req.body;
+                /* Nuevos datos a insertar en base de datos */
+                let rows = {};
+                /*
+                 Incrementar el valor de ciertas columnas sin necesitad de obtener sus valores
+                 anteriores mediante otra petición a la base de datos
+                */
+                /* Siempre se incrementará en 1 la columna «pj» */
+                rows.pj = { toSqlString: () => '`pj` + 1' };
+                /* Nombres de las columnas acceptadas */
+                const columns = ['pg','pp','pe','pi'];
+                /* Verificar si la columna enviada corresponde a una en la base de datos */
+                const columnName = columns.find( column => affectRow === column);
+                if (columnName) {
+                    /* Agregarle una nueva propiedad que corresponda al nombre de tal columna */
+                    rows[affectRow] = { toSqlString: () => `${columnName} + 1` };
+                } else {
+                    return res.json(apiResponse(404, false, false));
+                }
+                let result = await model.setMatch(id, rows);
+                /* Cuando una fila ha sido modificada */
                 if(result.changedRows === 1) {
                     res.json(apiResponse(200, false, true));
                 } else {
