@@ -116,12 +116,7 @@ export default {
                         ? localStorage.getItem('path')
                         : null;
                 try {
-                    let result = await this.axios({
-                        method: 'POST',
-                        url: '/api/token',
-                        data: { path: url },
-                        headers: { Autorization: `Bearer ${localStorage.getItem('token')}` }
-                    });
+                    let result = await this.axios.post('/api/token', { path: url });
                     /* Datos de sesión */
                     let { auth } = result.data;
                     let status = null;
@@ -351,13 +346,7 @@ export default {
             /* Consultar los puntos actuales del jugador */
             try {
                 let { id } = this.userData;
-                let result = await this.axios({
-                    method: 'GET',
-                    url: `/api/points/${id}`,
-                    headers: {
-                        Autorization: `Bearer ${localStorage.getItem('token')}`
-                    }
-                });
+                let result = await this.axios.get(`/api/points/${id}`);
                 if (result.status === 200) {
                     this.points = result.data.data.points;
                 } else {

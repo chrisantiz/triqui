@@ -3,8 +3,13 @@ import vueAxios from 'vue-axios'
 import axios from 'axios';
 import router from './router';
 import App from './App.vue';
-vue.use(vueAxios, axios);
+/* Token de autorización */
+const token = localStorage.getItem('token');
+/* -- Configuración Axios para todas las peticiones HTTP -- */
+axios.defaults.baseURL = 'http://127.0.0.1:3000';
+axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 
+vue.use(vueAxios, axios);
 new vue({
     el: '#app',
     router,

@@ -99,16 +99,7 @@ export default {
             /* Verificar si existe un token en el localStorage */
             if(localStorage.getItem('token')) {
                 try {
-                    let result = await this.axios({
-                        method: 'POST',
-                        url: '/api/token',
-                        data: {
-                            path: url
-                        },
-                        headers: {
-                            Autorization: `Bearer ${localStorage.getItem('token')}`
-                        }
-                    });
+                    let result = await this.axios.post('/api/token', { path: url });
                     /* Información sobre la autenticación del token */
                     let { auth } = result.data;
                     let status = null;

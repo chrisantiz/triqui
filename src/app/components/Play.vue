@@ -189,16 +189,7 @@ export default {
       // Comprobar si hay un token en el local storage
       if (localStorage.getItem('token')) {
         try {
-            let result = await this.axios({
-                method: 'POST',
-                url: '/api/token',
-                data: {
-                    path: this.thisPath
-                },
-                headers: {
-                    Autorization: `Bearer ${localStorage.getItem('token')}`
-                }
-            });
+            let result = await this.axios.post('/api/token', { path: this.thisPath });
             // `auth` es la data del token y `status` la validación del path
             let { status, auth } = result.data;
             /* SI HAY ALGÚN USUARIO CON SESIÓN ACTIVA */
@@ -413,13 +404,7 @@ export default {
       /* Consultar los puntos actuales del jugador */
       try {
         let { id } = this.userData;
-        let result = await this.axios({
-          method: 'GET',
-          url: `/api/points/${id}`,
-          headers: {
-            Autorization: `Bearer ${localStorage.getItem('token')}`
-          }
-        });
+        let result = await this.axios.get(`/api/points/${id}`);
         if (result.status === 200) {
           this.points = result.data.data.points;
         } else {
@@ -528,17 +513,7 @@ export default {
     /* Actualizar los puntos de un usuario */
     async updatePoints(id, points) {
       try {
-        let result = await this.axios({
-          method: 'PUT',
-          url: '/api/points',
-          data: {
-            id,
-            points
-          },
-          headers: {
-            Autorization: `Bearer ${localStorage.getItem('token')}`
-          }
-        });
+        let result = await this.axios.put('/api/points', { id, points });
         let { data } = result;
         if (data.status !== 200) {
           M.toast({
