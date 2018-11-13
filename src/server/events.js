@@ -4,11 +4,11 @@ let games = [];
 const event = require('./event');
 // Escuchar el evento
 event.on('startgame', data => {
-    let index = games.findIndex( dt => dt.path === data.path);
+    let index = games.findIndex( dt => dt.id === data.id);
     // Agregarse solo cuando no exista
     if(index === -1) games.push(data);
 });
-event.on('left', user => { 
+event.on('left', user => {
     /* Índice en el arreglo del usuario saliente */
     let index = games.findIndex( game => {
         return (game.p1.nick === user || game.p2.nick === user);
@@ -43,8 +43,8 @@ event.on('updatestate', user => {
     }
 });
 /* Eliminar la ruta de una partida cuando alguno de los dos jugadores se desconecta y no vuelve */
-event.on('deletepath', path => {
-    let index = games.findIndex( dt => dt.path === path);
+event.on('deletepath', id => {
+    let index = games.findIndex( dt => dt.id === id);
     if(index >= 0) {
         games.splice(index, 1);
     };

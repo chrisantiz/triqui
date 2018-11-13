@@ -1,6 +1,6 @@
 <template>
     <!-- Cargar solo cuando no se vaya a redireccionar a otra página -->
-    <div v-if="redirectTo === 0 || redirected" class="container" @keypress.enter="sendEnter">
+    <div class="container" @keypress.enter="sendEnter">
         <h2 class="center">Triki</h2>
         <!-- Fila principar -->
         <div class="row">
@@ -70,7 +70,8 @@
 
 </template>
 <script>
-
+import Vue from 'vue';
+import { authorization, invalidTokenAlert } from '../router/functions';
 export default {
     data() {
         return {
@@ -83,79 +84,130 @@ export default {
             /* Validar nick */
             lastTypingTime: 0,
             userExists: false,
-            /* Indica si se tiene que renderizar la vista actual */
-            redirectTo: null,
-            fromOtherPage: false
         }
     },
-    async created() {
-        this.fromOtherPage = this.redirected;
-        // Cuando no ha sido redireccionado desde otra página
-        if(!this.redirected) {
-            /* URL de una partida si la hay */
-            let url = (localStorage.getItem('path'))
-                    ? localStorage.getItem('path')
-                    : null;
-            /* Verificar si existe un token en el localStorage */
-            if(localStorage.getItem('token')) {
-                try {
-                    let result = await this.axios.post('/api/token', { path: url });
-                    /* Información sobre la autenticación del token */
-                    let { auth } = result.data;
-                    let status = null;
-                    if (url) status = result.data.status;
-                     // Si hay algún usuario logeado
-                    if(auth.status.code === 200) {
-                        /* Cuando tiene un juego abierto y disponible */
-                        if(status === 1) {
-                            window.location.href = url;
-                        } else {
-                            /* Indica que no renderize ese componente */
-                            this.redirectTo = 1;
-                            // Redirige a la página home con los datos del usuario
-                            this.$router.push({name:'home', params:{
-                                redirected: true,
-                                data: auth.data
-                            }});
-                        }
-                    } else {
-                        /* No hay usuario logeado, carga la página normalmente */
-                        this.redirectTo = 0;
+    async beforeRouteEnter (to, from, next) {
+        /* Cuando se es enviado desde otra página */
+        if (to.params.redirected) {
+            next();
+        } else {
+            /* Cuando se accede directamente a la ruta */
+            try {
+                let res = await authorization(Vue.axios);
+                /* Logeado */
+                if (res.entry) {
+                    /* Cuando hay una partida activa */
+                    if (res.gameData) {
+                        return next({
+                            name: 'play',
+                            params: {
+                                p1: res.gameData.p1,
+                                p2: res.gameData.p2,
+                                data: res.data,
+                                redirected: true
+                            },
+                            query: {
+                                id: res.gameData.id
+                            }
+                        });
                     }
-                } catch (err) {
-                    M.toast({
-                        html: '¡Error interno!, no se ha podido verificar el token',
-                        displayLength: 2500,
-                        className: 'red'
-                    })
+                    /* Mandar a la página principal con los datos del usuario */
+                    next({ name: 'home', params: { data: res.data, redirected: true } });
+                } else {
+                    /* Cuando el token es inválido */
+                    if (res.status === 401) {
+                        return invalidTokenAlert(next, swal, true);
+                    }
+                    /* Cuando solo no está logeado, renderizar la vista */
+                    next();
                 }
-            } else {
-                // Carga la página con normalidad
-                this.redirectTo = 0;
+            } catch(err) {
+                swal({
+                    icon: 'error',
+                    title: '¡Error interno!',
+                    text: 'Tenemos problemas al obtener tu información, por favor intenta volver a iniciar sesión.',
+                    buttons: 'Iniciar sesión',
+                    closeOnClickOutside: false,
+                    closeOnEsc: false
+                }).then( action => {
+                    localStorage.removeItem('token');
+                    next();
+                });
             }
         }
+    },
+    mounted() {
+        M.Collapsible.init(document.querySelector('.collapsible'));
+        document.querySelector('#username').focus();
+    },
+    async created() {
+        // this.fromOtherPage = this.redirected;
+        // Cuando no ha sido redireccionado desde otra página
+        // if(!this.redirected) {
+        //     /* URL de una partida si la hay */
+        //     let url = (localStorage.getItem('path'))
+        //             ? localStorage.getItem('path')
+        //             : null;
+        //     /* Verificar si existe un token en el localStorage */
+        //     if(localStorage.getItem('token')) {
+        //         try {
+        //             let result = await this.axios.post('/api/token', { path: url });
+        //             /* Información sobre la autenticación del token */
+        //             let { auth } = result.data;
+        //             let status = null;
+        //             if (url) status = result.data.status;
+        //              // Si hay algún usuario logeado
+        //             if(auth.status.code === 200) {
+        //                 /* Cuando tiene un juego abierto y disponible */
+        //                 if(status === 1) {
+        //                     window.location.href = url;
+        //                 } else {
+        //                     /* Indica que no renderize ese componente */
+        //                     this.redirectTo = 1;
+        //                     // Redirige a la página home con los datos del usuario
+        //                     this.$router.push({name:'home', params:{
+        //                         redirected: true,
+        //                         data: auth.data
+        //                     }});
+        //                 }
+        //             } else {
+        //                 /* No hay usuario logeado, carga la página normalmente */
+        //                 this.redirectTo = 0;
+        //             }
+        //         } catch (err) {
+        //             M.toast({
+        //                 html: '¡Error interno!, no se ha podido verificar el token',
+        //                 displayLength: 2500,
+        //                 className: 'red'
+        //             })
+        //         }
+        //     } else {
+        //         // Carga la página con normalidad
+        //         this.redirectTo = 0;
+        //     }
+        // }
     },
     watch: {
         // Espera para saber si se va a direccionar a otra página
-        redirectTo(val) {
-            // Cuando se queda en la página
-            if (val === 0) {
-                // Espera a que se cree el nodo
-                setTimeout( () => {
-                    M.Collapsible.init(document.querySelectorAll('.collapsible'));
-                    document.querySelector('#username').focus();
-                }, 50)
-            }
-        },
-        fromOtherPage(val) {
-            /* Cuando han cerrado sesión */
-            if (val) {
-                setTimeout( () => {
-                    M.Collapsible.init(document.querySelectorAll('.collapsible'));
-                    document.querySelector('#username').focus();
-                }, 50);
-            }
-        }
+        // redirectTo(val) {
+        //     // Cuando se queda en la página
+        //     if (val === 0) {
+        //         // Espera a que se cree el nodo
+        //         setTimeout( () => {
+                    // M.Collapsible.init(document.querySelectorAll('.collapsible'));
+                    // document.querySelector('#username').focus();
+        //         }, 50)
+        //     }
+        // },
+        // fromOtherPage(val) {
+        //     /* Cuando han cerrado sesión */
+        //     if (val) {
+        //         setTimeout( () => {
+        //             M.Collapsible.init(document.querySelectorAll('.collapsible'));
+        //             document.querySelector('#username').focus();
+        //         }, 50);
+        //     }
+        // }
     },
     methods: {
         /* ----- Ejecutar acciones cuando se presione la tecla enter ----- */
@@ -206,14 +258,12 @@ export default {
                 let { data } = result;
                 /* Cuando las credenciales son correctas */
                 if (data.status === 200) {
-                    // Crea un item en el storage con el token
+                    /* Modificar la cabecera «Authorization» para las nuevas peticiones */
+                    this.axios.defaults.headers.common['Authorization'] = `Bearer ${data.token}`;
+                    /* Crea un item en el storage con el token */
                     localStorage.setItem('token', data.token);
-                    // Redirige con los datos del usuario
-                    this.$router.push({ name:'home', params: {
-                            data: data,
-                            redirected: true
-                        }
-                    });
+                    /* Redirige con los datos del usuario */
+                    this.$router.push({ name:'home', params: { data, redirected: true } });
                 /* Datos incorrectos */
                 } else {
                     M.toast({

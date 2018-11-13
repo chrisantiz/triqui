@@ -7,11 +7,14 @@ const publicKey = fs.readFileSync(`${__dirname}/keys/public.key`);
 
 module.exports = {
     /* Crea un nuevo token */
-    create (data, unit, count) {
+    create (data, unit = null, amount = null) {
         const payload = {
             data,
             iat: Date.now(),
-            exp: Date.now() + timer[unit] * count
+        }
+        /* Cuando se quiere crear un token que expire en un tiempo determinado */
+        if (unit && amount) {
+            payload['exp'] =  Date.now() + timer[unit] * amount;
         }
         return jwt.sign(payload, privateKey, { algorithm: 'RS256' });
     },
@@ -36,7 +39,7 @@ module.exports = {
             } catch (err) {
                 /* Cuando el token verificado es inválido */
                 reject({
-                    status:500,
+                    status: 401,
                     message: 'INVALID_TOKEN'
                 });
             }

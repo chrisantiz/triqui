@@ -11,9 +11,10 @@ module.exports = {
     /* ---------- Validación del token ---------- */
     token(req, res) {
         /* Si se envío una ruta se comprueba */
-        if (req.body.path) {
-            let index = arrGames.findIndex(dt => dt.path === req.body.path)
+        if (req.body.id) {
+            let index = arrGames.findIndex(dt => dt.id === req.body.id)
             if (index !== -1) {
+                console.log('ruta válida');
                 /* Ruta válida */
                 res.json({
                     status: 1,
@@ -21,6 +22,7 @@ module.exports = {
                 });
                 /* Ruta inválida */
             } else {
+                console.log('ruta inválida');
                 res.json({
                     status: 0,
                     auth: res.auth
@@ -55,7 +57,7 @@ module.exports = {
             /* Cuando se ha obtenido información del usuario solicitado */
             if (data.length) {
                 user = data[0];
-                const token = jwt.create(user, 'day', 15);
+                const token = jwt.create(user);
                 user.token = token;
                 user.status = 200;
             /* Cuando las credenciales son incorrectas */

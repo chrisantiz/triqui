@@ -1,5 +1,5 @@
 <template>
-    <div v-if="redirectTo === 0">
+    <div>
         <!-- RENDERIZAR COMPONENTE BARRA SUPERIOR Y LATERAL -->
         <sidenav :nick="userData.nick" :points="points" @closesession="closeSession" />
         <!-- CONTENEDOR -->
@@ -84,18 +84,72 @@ import io from 'socket.io-client';
 const socket = io.connect('http://127.0.0.1:3000/home');
 // Alertas
 import swal from 'sweetalert';
-
+import Vue from 'vue';
+import { authorization, invalidTokenAlert } from '../router/functions';
 export default {
+    async beforeRouteEnter(to, from, next) {
+        if (to.params.redirected) {
+            next(mv => {
+                mv.userData = mv.$props.data
+            });
+        } else {
+            try {
+                let res = await authorization(Vue.axios);
+                /* Logeado */
+                if (res.entry) {
+                    /* Cuando hay una partida activa */
+                    if (res.gameData) {
+                        return next({
+                            name: 'play',
+                            params: {
+                                p1: res.gameData.p1,
+                                p2: res.gameData.p2,
+                                data: res.data,
+                                redirected: true
+                            },
+                            query: {
+                                id: res.gameData.id
+                            }
+                        });
+                    }
+                    /* Renderizar el component actual y pasar los datos del usuario */
+                    next( mv => {
+                        mv.userData = res.data;
+                    });
+                } else {
+                    /* Cuando el token es inválido */
+                    if (res.status === 401) {
+                        return invalidTokenAlert(next, swal);
+                    }
+                    /* Cuando solo no está logeado, renderizar la vista */
+                    next({ name: 'login', params: { redirected: true } });
+                }
+            } catch(err) {
+                swal({
+                    icon: 'error',
+                    title: '¡Error interno!',
+                    text: 'Tenemos problemas al obtener tu información, por favor intenta volver a iniciar sesión.',
+                    buttons: 'Iniciar sesión',
+                    closeOnClickOutside: false,
+                    closeOnEsc: false
+                }).then( action => {
+                    localStorage.removeItem('token');
+                    next({ name: 'login' });
+                });
+            }
+
+        }
+    },
     data() {
         return {
             /* Datos del usuario actual */
             userData: {},
             /* Puntos del usuario */
             points: null,
+            /* Identificador de la sala donde jugarán */
+            romm: '',
             // Usuarios en línea
             users: [],
-            // Indica si se tiene que redirigir o no al login
-            redirectTo: null,
             // Nick del jugador retado (útil para cancelar un reto)
             otherPlayer: '',
             // Saber si el reto ha sido cancelado
@@ -107,108 +161,110 @@ export default {
             }
         }
     },
+    mounted() {
+        M.Modal.init(document.querySelector('.modal'), { dismissible:false });
+    },
     async created() {
-        // Cuando se carga la página desde la url
-        if(!this.redirected) {
-            // Comprobar si hay un token en el local storage
-            if(localStorage.getItem('token')) {
-                let url = (localStorage.getItem('path'))
-                        ? localStorage.getItem('path')
-                        : null;
-                try {
-                    let result = await this.axios.post('/api/token', { path: url });
-                    /* Datos de sesión */
-                    let { auth } = result.data;
-                    let status = null;
-                    /* Información sobre alguna partida activa */
-                    if (url) status = result.data.status;
-                    /* Respuesta de verificación del token */
-                    switch (auth.status.code) {
-                        /* Correcto */
-                        case 200:
-                            /* Cuando tiene un juego abierto y disponible */
-                            if(status === 1) {
-                                this.redirectTo = 1;
-                                window.location.href = url;
-                            /* Si no, se deja en la página */
-                            } else {
-                                /* Los datos del usuario */
-                                this.redirectTo = 0;
-                                this.userData = auth.data;
-                            }
-                        break;
-                        /* Token expirado */
-                        case 401:
-                            /* Impedir renderizar el componente */
-                            this.redirectTo = 1;
-                            swal({
-                                icon: 'error',
-                                title: '¡Token expirado!',
-                                text: 'Tu sesión ha caducado, por favor vuelve a iniciar sesión.',
-                                buttons: 'Iniciar sesión',
-                                closeOnClickOutside: false,
-                                closeOnEsc: false
-                            }).then( action => {
-                                if (action) {
-                                    /* Eliminar token de seguridad */
-                                    localStorage.removeItem('token');
-                                    /* Redirigir al login */
-                                    this.$router.push({ name: 'login',
-                                        params: { redirected: true }
-                                    });
-                                }
-                            });
-                        break;
-                        /* Token inválido */
-                        default:
-                            /* Impedir renderizar el componente */
-                            this.redirectTo = 1;
-                            swal({
-                                icon: 'error',
-                                title: '¡Token inválido!',
-                                text: 'El token verificado es incorrecto, por favor vuelve a iniciar sesión.',
-                                buttons: 'Iniciar sesión',
-                                closeOnClickOutside: false,
-                                closeOnEsc: false
-                            }).then( action => {
-                                if (action) {
-                                    /* Eliminar token de seguridad */
-                                    localStorage.removeItem('token');
-                                    /* Redirigir al login */
-                                    this.$router.push({ name: 'login',
-                                        params: { redirected: true }
-                                    });
-                                }
-                            });
-                        break;
-                    }
-                } catch (err) {
-                    /* Si ocurre un error al intentar verificar el token */
-                    swal({
-                        icon: 'error',
-                        title: '¡Token no validado!',
-                        text: 'Error inesperado, no hemos podido verificar tu token de seguridad. Intenta volver a iniciar sesión.',
-                        buttons: 'Iniciar Sesión'
-                    }).then( action => {
-                        /* Impedir renderizar el componente */
-                        this.redirectTo = 1;
-                        /* Eliminar el token de seguridad actual */
-                        localStorage.removeItem('token');
-                        /* Redirigir al login */
-                        this.$router.push({ name: 'login' });
-                    });
-                }
-            } else {
-                // Si no hay ningún token se manda al login
-                this.redirectTo = 1;
-                this.$router.push({ name:'login' });
-            }
-        } else {
-            /* -------- Cuando se he redirigido desde el login ------ */
-            /* Datos del usuario */
-            this.userData = this.data;
-            this.redirectTo = 0;
-        }
+        // if(!this.redirected) {
+        //     // Comprobar si hay un token en el local storage
+        //     if(localStorage.getItem('token')) {
+        //         let url = (localStorage.getItem('path'))
+        //                 ? localStorage.getItem('path')
+        //                 : null;
+        //         try {
+        //             let result = await this.axios.post('/api/token', { path: url });
+        //             /* Datos de sesión */
+        //             let { auth } = result.data;
+        //             let status = null;
+        //             /* Información sobre alguna partida activa */
+        //             if (url) status = result.data.status;
+        //             /* Respuesta de verificación del token */
+        //             switch (auth.status.code) {
+        //                 /* Correcto */
+        //                 case 200:
+        //                     /* Cuando tiene un juego abierto y disponible */
+        //                     if(status === 1) {
+        //                         this.redirectTo = 1;
+        //                         window.location.href = url;
+        //                     /* Si no, se deja en la página */
+        //                     } else {
+        //                         /* Los datos del usuario */
+        //                         this.redirectTo = 0;
+        //                         this.userData = auth.data;
+        //                     }
+        //                 break;
+        //                 /* Token expirado */
+        //                 case 401:
+        //                     /* Impedir renderizar el componente */
+        //                     this.redirectTo = 1;
+                            // swal({
+                            //     icon: 'error',
+                            //     title: '¡Token expirado!',
+                            //     text: 'Tu sesión ha caducado, por favor vuelve a iniciar sesión.',
+                            //     buttons: 'Iniciar sesión',
+                            //     closeOnClickOutside: false,
+                            //     closeOnEsc: false
+                            // }).then( action => {
+                            //     if (action) {
+                            //         /* Eliminar token de seguridad */
+                            //         localStorage.removeItem('token');
+                            //         /* Redirigir al login */
+                            //         this.$router.push({ name: 'login',
+                            //             params: { redirected: true }
+                            //         });
+                            //     }
+                            // });
+        //                 break;
+        //                 /* Token inválido */
+        //                 default:
+        //                     /* Impedir renderizar el componente */
+        //                     this.redirectTo = 1;
+        //                     swal({
+        //                         icon: 'error',
+        //                         title: '¡Token inválido!',
+        //                         text: 'El token verificado es incorrecto, por favor vuelve a iniciar sesión.',
+        //                         buttons: 'Iniciar sesión',
+        //                         closeOnClickOutside: false,
+        //                         closeOnEsc: false
+        //                     }).then( action => {
+        //                         if (action) {
+        //                             /* Eliminar token de seguridad */
+        //                             localStorage.removeItem('token');
+        //                             /* Redirigir al login */
+        //                             this.$router.push({ name: 'login',
+        //                                 params: { redirected: true }
+        //                             });
+        //                         }
+        //                     });
+        //                 break;
+        //             }
+        //         } catch (err) {
+        //             /* Si ocurre un error al intentar verificar el token */
+        //             swal({
+        //                 icon: 'error',
+        //                 title: '¡Token no validado!',
+        //                 text: 'Error inesperado, no hemos podido verificar tu token de seguridad. Intenta volver a iniciar sesión.',
+        //                 buttons: 'Iniciar Sesión'
+        //             }).then( action => {
+        //                 /* Impedir renderizar el componente */
+        //                 this.redirectTo = 1;
+        //                 /* Eliminar el token de seguridad actual */
+        //                 localStorage.removeItem('token');
+        //                 /* Redirigir al login */
+        //                 this.$router.push({ name: 'login' });
+        //             });
+        //         }
+        //     } else {
+        //         // Si no hay ningún token se manda al login
+        //         this.redirectTo = 1;
+        //         this.$router.push({ name:'login' });
+        //     }
+        // } else {
+        //     /* -------- Cuando se he redirigido desde el login ------ */
+        //     /* Datos del usuario */
+        //     this.userData = this.data;
+        //     this.redirectTo = 0;
+        // }
         /* --------- Evento para cancelar un reto -------- */
         socket.on('cancelchallenge', user => {
             if (this.userData.nick === user) {
@@ -238,30 +294,42 @@ export default {
         /* ------------------ Respuesta de reto ------------------ */
         socket.on('challengeresponse', info => {
             // Cuando responden el reto
-            if(info.from === this.userData.nick) {
+            if(info.p1 === this.userData.nick) {
                 // Comprobar si el reto fue respondido
                 if(info.response) {
                     // Se verifica si se aceptó para dirigir al combate
-                    if(info.path) {
+                    if(info.accept) {
                         socket.emit('startgame', {
-                            p1: {nick: info.to, status: 1},
-                            p2: {nick: info.from, status: 1},
-                            path: info.path
+                            p1: { nick: info.p1, status: 1 },
+                            p2: { nick: info.p2, status: 1 },
+                            id: info.id
                         });
-                        socket.emit('updateusers', [this.userData.nick, info.to]);
+                        socket.emit('updateusers', [info.p1, info.p2]);
                         /* Guardar datos localmente para su uso en Play.vue */
                         localStorage.setItem('userData', JSON.stringify(this.userData));
                         if (localStorage.getItem('infoGame')) {
                             localStorage.removeItem('infoGame');
                         }
-                        window.location.href = info.path;
+                        this.$router.push({
+                            name: 'play',
+                            params: {
+                                p1: info.p1,
+                                p2: info.p2,
+                                data: this.userData,
+                                redirected: true
+                            },
+                            query: {
+                                id: info.id
+                            }
+                        });
+                        // window.location.href = info.path;
                     } else {
                         // Volver activo el botón de reto
                         this.bind.waitResponse = false;
                         // Mensaje de respuesta de rechazo
                         swal({
                             icon: 'error',
-                            text: `${info.to.toUpperCase()} ha rechazado tu reto`,
+                            text: `${info.p2.toUpperCase()} ha rechazado tu reto`,
                             buttons: false,
                             timer: 2500
                         });
@@ -273,7 +341,7 @@ export default {
                     if(!this.challengeCanceled) {
                         swal({
                             icon: 'error',
-                            text: `${info.to.toUpperCase()} no respondido tu reto`,
+                            text: `${info.p2.toUpperCase()} no respondido tu reto`,
                             buttons: false,
                             timer: 2500
                         });
@@ -284,7 +352,7 @@ export default {
         /* ----------- Reto entrante ------------- */
         socket.on('challenge', info => {
             // Comprobar si el reto es para el usuario actual
-            if(info.from === this.userData.nick) {
+            if(info.to === this.userData.nick) {
                 // Si lo es se muestra una alerta pidiendo aceptar o rechazar
                 swal({
                     title: 'Reto entrante',
@@ -292,7 +360,7 @@ export default {
                     content: {
                         element: 'p',
                         attributes: {
-                            textContent: `¡${info.to.toUpperCase()} te está retando!`
+                            textContent: `¡${info.from.toUpperCase()} te está retando!`
                         }
                     },
                     buttons: {
@@ -321,19 +389,43 @@ export default {
 
                             info.path = `/play/${players}?id=${id}`;
                             info.response = true;
-                            this.challengeResponse(info);
+
+                            this.room = `/play/${players}?id=${id}`;
+                            // this.challengeResponse(info);
+                            /* ---------------------------------- */
+                            this.challengeResponse({
+                                response: true,
+                                accept: true,
+                                p1: info.from,
+                                p2: info.to,
+                                id
+                            });
                             break;
                         // Cuando se rechaza
                         case false:
                             info.response = true;
                             info.path = null;
-                            this.challengeResponse(info);
+                            // this.challengeResponse(info);
+                            /* ------------------- */
+                            this.challengeResponse({
+                                response: true,
+                                accept: false,
+                                p1: info.from,
+                                p2: info.to
+                            });
                             break;
                         // Cuando no se responde
                         default:
                             info.response = false;
                             info.path = null;
-                            this.challengeResponse(info);
+                            // this.challengeResponse(info);
+                            /* ------------------- */
+                            this.challengeResponse({
+                                response: false,
+                                accept: false,
+                                p1: info.from,
+                                p2: info.to
+                            });
                             break;
                     }
                 })
@@ -368,16 +460,6 @@ export default {
                 nick: this.userData.nick,
                 fight: false
             });
-        },
-        /* ---- Respuesta para saber si se está o no logeado ----- */
-        redirectTo(val) {
-            if(val === 0) {
-                // Cuando no se va a redirigir
-                setTimeout( () => {
-                    // M.Sidenav.init(document.querySelectorAll('.sidenav'));
-                    M.Modal.init(document.querySelectorAll('.modal'),{dismissible:false});
-                }, 100)
-            }
         }
     },
     methods: {
@@ -390,38 +472,53 @@ export default {
         },
         /* ------- Método para responder un reto ------- */
         challengeResponse(info) {
-            socket.emit('challengeresponse', {
-                // Quien responde
-                to: this.userData.nick,
-                // A quien le responde
-                from: info.to,
-                // Verificar si respondió
-                response: info.response,
-                // Ruta (existente cuando se acepta) para el nuevo combate
-                path: info.path
-            })
+            // socket.emit('challengeresponse', {
+            //     // Quien responde
+            //     to: this.userData.nick,
+            //     // A quien le responde
+            //     from: info.to,
+            //     // Verificar si respondió
+            //     response: info.response,
+            //     // Ruta (existente cuando se acepta) para el nuevo combate
+            //     path: info.path
+            // });
+            /* ------------------------ */
+            socket.emit('challengeresponse', info);
             // Validar si el reto fue respondido y aceptado
-            if (info.response && info.path) {
+            if (info.response && info.accept) {
                 // Para saber que este usuario está en combate
                 this.fight = true;
                 /* Guardar en localStorage para su uso en Play.vue */
-                localStorage.setItem('userData', JSON.stringify(this.userData));
-                if (localStorage.getItem('infoGame')) {
-                    localStorage.removeItem('infoGame');
-                }
-                window.location.href = info.path;
+                // localStorage.setItem('userData', JSON.stringify(this.userData));
+                // if (localStorage.getItem('infoGame')) {
+                //     localStorage.removeItem('infoGame');
+                // }
+                // window.location.href = info.path;
+                /* Redireccionar a la partida */
+                this.$router.push({
+                    name: 'play',
+                    params: {
+                        p1: info.p1,
+                        p2: info.p2,
+                        data: this.userData,
+                        redirected: true
+                    },
+                    query: {
+                        id: info.id
+                    }
+                });
             }
         },
         /* ---------------- Retar a otro jugador ----------------- */
-        challenge(from) {
-            this.otherPlayer = from;
+        challenge(to) {
+            this.otherPlayer = to;
             // Deshabilitar el botón de reto
             this.bind.waitResponse = true;
             this.challengeCanceled = false;
             // Emitir el evento
             socket.emit('challenge', {
-                to: this.userData.nick,
-                from: from
+                to,
+                from: this.userData.nick,
             });
         },
         /* ------------ Cerrado total de sesión ------------ */
@@ -430,10 +527,8 @@ export default {
             M.Sidenav.getInstance(document.querySelector('#menu-side')).close();
 
             localStorage.removeItem('token');
-            this.$router.push( {name: 'login', params: {
-                redirected: true
-            }} );
             socket.emit('closesession');
+            this.$router.push({ name: 'login', params: { redirected: true } });
         }
     },
     components: {
@@ -448,7 +543,7 @@ export default {
         data: {
             type: Object,
             default: null
-        }
+        },
     }
 }
 </script>

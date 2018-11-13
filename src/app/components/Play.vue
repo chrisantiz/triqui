@@ -1,6 +1,6 @@
 <template>
-    <!-- <div> -->
-    <div v-if="redirectTo === 0">
+    <div>
+    <!-- <div v-if="redirectTo === 0"> -->
       <!-- COMPONENTE BARRA LATERAL Y SUPERIOR-->
       <sidenav :nick="userData.nick" :points="points"  @closesession="closeTotalSession" />
       <transition name="fade" mode="out-in">
@@ -146,8 +146,25 @@ export default {
       forceLeft: false
     };
   },
+  /* Antes de entrar a la ruta */
+  async beforeRouteEnter (to, from, next) {
+    /* Cuando se envían los datos del jugador es porque está iniciando  */
+    if (to.params.redirected) {
+      next(mv => {
+        mv.userData = mv.$props.data;
+      });
+    }
+    // if (to.params.data) {
+    //   next(mv => {
+    //     mv.userData = mv.$props.data;
+    //   });
+    // } else {
+    //   /* Cuando se a */
+    // }
+  },
   /* -------------------------- COMPONENTE CREADO ------------------------- */
   async created() {
+    console.log(this.userData.nick);
     /* Preguntar si existe información de una partida activa */
     if (localStorage.getItem('infoGame')) {
       /* Preguntar si existe información de la partida */
@@ -166,94 +183,125 @@ export default {
       params = params.substr(0, params.length - 2);
     }
     this.thisPath = `${pathname}${params}`;
+    // if (this.data) {
+    //   this.userData = this.data;
+    // }
+    /* Unirlo a un nuevo canal */
+    // socket.emit('joinroom', this.thisPath);
+    socket.emit('joinroom', this.$route.query.id);
+    /* Permite renderizar la vista actual */
+    this.redirectTo = 0;
+    /* Obtiene la data del usuario actual guardada localmente */
+    // this.userData = JSON.parse(localStorage.getItem('userData'));
+    localStorage.removeItem('userData');
+    // /* Emitir la entrada del usuario */
+    // socket.emit('entry', this.userData.nick);
+    // /* El símbolo que pintará cada jugador */
+    // this.draw = this.userData.nick === this.p1 ? 'X' : 'O';
+    // Guardar la ruta
+    // localStorage.setItem('path', this.$route.query.id);
+    
+    /* Guardar los datos de esta ruta */
+    const gameData = {
+      p1: this.p1,
+      p2: this.p2,
+      id: this.$route.query.id
+    };
+    localStorage.setItem('gameData', JSON.stringify(gameData));
+
+    // /* Nombre del nick del rival */
+    // this.rivalNick = this.p1 === this.userData.nick ? this.p2 : this.p1;
+    this.rivalState = 1;
+
+
     /* ------- CUANDO SE ENVÍA DESDE EL HOME (INICIAR UNA PARTIDA) ------- */
-    if (localStorage.getItem('userData')) {
+    // if (localStorage.getItem('userData')) {
       /* Unirlo a un nuevo canal */
-      socket.emit('joinroom', this.thisPath);
-      /* Permite renderizar la vista actual */
-      this.redirectTo = 0;
-      /* Obtiene la data del usuario actual guardada localmente */
-      this.userData = JSON.parse(localStorage.getItem('userData'));
-      localStorage.removeItem('userData');
-      /* Emitir la entrada del usuario */
-      socket.emit('entry', this.userData.nick);
-      /* El símbolo que pintará cada jugador */
-      this.draw = this.userData.nick === this.p1 ? 'X' : 'O';
-      // Guardar la ruta
-      localStorage.setItem('path', this.thisPath);
-      /* Nombre del nick del rival */
-      this.rivalNick = this.p1 === this.userData.nick ? this.p2 : this.p1;
-      this.rivalState = 1;
-    } else {
-      /* ------- CUANDO SE ACCEDE A LA RUTA O ES REDIRECCIONADO ------- */
-      // Comprobar si hay un token en el local storage
-      if (localStorage.getItem('token')) {
-        try {
-            let result = await this.axios.post('/api/token', { path: this.thisPath });
-            // `auth` es la data del token y `status` la validación del path
-            let { status, auth } = result.data;
-            /* SI HAY ALGÚN USUARIO CON SESIÓN ACTIVA */
-            if (auth.status.code === 200) {
-              /* CUANDO LA RUTA HA SIDO VALIDADA EXITOSAMENTE */
-              if (status === 1) {
-                /* Comprobar si el usuario que visita es uno de los dos jugadores */
-                if (auth.data.nick === this.p1 || auth.data.nick === this.p2) {
-                  /* Unirlo a un nuevo canal (o al que estaba si salió y volvió) */
-                  socket.emit('joinroom', this.thisPath);
-                  /* Indica que la vista actual se renderizará */
-                  this.redirectTo = 0;
-                  /* Asigna la data del usario */
-                  this.userData = auth.data;
-                  /* Asigna el nick del rival */
-                  this.rivalNick = this.p1 === this.userData.nick ? this.p2 : this.p1;
-                  /* Permite saber si el rival sigue activo en la partida */
-                  this.rivalState = 1;
-                  /* Lo que cada usuario pintará */
-                  this.draw = this.userData.nick === this.p1 ? 'X' : 'O';
-                  /* Guardar la ruta/sobrescribir */
-                  localStorage.setItem('path', this.thisPath);
-                  /* Emite una nueva entrada */
-                  socket.emit('entry', this.userData.nick);
-                /* Cuando el visitante es un jugador extraño */
-                } else {
-                  swal({
-                    icon: 'warning',
-                    title: '¡Sin acceso!',
-                    text: 'No posees acceso a esta partida, reta a alguien para poder jugar.',
-                    buttons: 'Volver'
-                  }).then( action => this.$router.push({ name: 'home' }));
-                }
-              } else {
-                /* CUANDO LA RUTA YA HA CADUCADO */
-                // swal({
-                //   icon: 'warning',
-                //   title: '¡Partida caducada!',
-                //   text: 'No puedes acceder a esta partida',
-                //   buttons: 'OK'
-                // })
-                // .then(res  => this.$router.push({ name: 'home' }) );
-              }
-            } else {
-              /* CUANDO LA SESIÓN HA EXPIRADO */
-              /* Impide renderizar la vista actual */
-              this.redirectTo = 1;
-              /* Redirecciona a inicio */
-              this.$router.push({ name: 'login' });
-            }
-        } catch (err) {
-            swal({
-              icon: 'error',
-              title: '¡Error interno!',
-              text: 'No se ha podido verificar tu token, vuelve a intentarlo.',
-              buttons: 'Ok'
-            }).then( res => window.location.href = '/home');
-        }
-      } else {
-        // Si no hay ningún token se manda al login
-        this.redirectTo = 1;
-        this.$router.push({ name: 'login' });
-      }
-    }
+      // socket.emit('joinroom', this.thisPath);
+      // /* Permite renderizar la vista actual */
+      // this.redirectTo = 0;
+      // /* Obtiene la data del usuario actual guardada localmente */
+      // this.userData = JSON.parse(localStorage.getItem('userData'));
+      // localStorage.removeItem('userData');
+      // /* Emitir la entrada del usuario */
+      // socket.emit('entry', this.userData.nick);
+      // /* El símbolo que pintará cada jugador */
+      // this.draw = this.userData.nick === this.p1 ? 'X' : 'O';
+      // // Guardar la ruta
+      // localStorage.setItem('path', this.thisPath);
+      // /* Nombre del nick del rival */
+      // this.rivalNick = this.p1 === this.userData.nick ? this.p2 : this.p1;
+      // this.rivalState = 1;
+    // } else {
+    //   /* ------- CUANDO SE ACCEDE A LA RUTA O ES REDIRECCIONADO ------- */
+    //   // Comprobar si hay un token en el local storage
+    //   if (localStorage.getItem('token')) {
+    //     try {
+    //         let result = await this.axios.post('/api/token', { path: this.thisPath });
+    //         // `auth` es la data del token y `status` la validación del path
+    //         let { status, auth } = result.data;
+    //         /* SI HAY ALGÚN USUARIO CON SESIÓN ACTIVA */
+    //         if (auth.status.code === 200) {
+    //           /* CUANDO LA RUTA HA SIDO VALIDADA EXITOSAMENTE */
+    //           if (status === 1) {
+    //             /* Comprobar si el usuario que visita es uno de los dos jugadores */
+    //             if (auth.data.nick === this.p1 || auth.data.nick === this.p2) {
+    //               /* Unirlo a un nuevo canal (o al que estaba si salió y volvió) */
+    //               socket.emit('joinroom', this.thisPath);
+    //               /* Indica que la vista actual se renderizará */
+    //               this.redirectTo = 0;
+    //               /* Asigna la data del usario */
+    //               this.userData = auth.data;
+    //               /* Asigna el nick del rival */
+    //               this.rivalNick = this.p1 === this.userData.nick ? this.p2 : this.p1;
+    //               /* Permite saber si el rival sigue activo en la partida */
+    //               this.rivalState = 1;
+    //               /* Lo que cada usuario pintará */
+    //               this.draw = this.userData.nick === this.p1 ? 'X' : 'O';
+    //               /* Guardar la ruta/sobrescribir */
+    //               localStorage.setItem('path', this.thisPath);
+    //               /* Emite una nueva entrada */
+    //               socket.emit('entry', this.userData.nick);
+    //             /* Cuando el visitante es un jugador extraño */
+    //             } else {
+    //               swal({
+    //                 icon: 'warning',
+    //                 title: '¡Sin acceso!',
+    //                 text: 'No posees acceso a esta partida, reta a alguien para poder jugar.',
+    //                 buttons: 'Volver'
+    //               }).then( action => this.$router.push({ name: 'home' }));
+    //             }
+    //           } else {
+    //             /* CUANDO LA RUTA YA HA CADUCADO */
+    //             // swal({
+    //             //   icon: 'warning',
+    //             //   title: '¡Partida caducada!',
+    //             //   text: 'No puedes acceder a esta partida',
+    //             //   buttons: 'OK'
+    //             // })
+    //             // .then(res  => this.$router.push({ name: 'home' }) );
+    //           }
+    //         } else {
+    //           /* CUANDO LA SESIÓN HA EXPIRADO */
+    //           /* Impide renderizar la vista actual */
+    //           this.redirectTo = 1;
+    //           /* Redirecciona a inicio */
+    //           this.$router.push({ name: 'login' });
+    //         }
+    //     } catch (err) {
+    //         swal({
+    //           icon: 'error',
+    //           title: '¡Error interno!',
+    //           text: 'No se ha podido verificar tu token, vuelve a intentarlo.',
+    //           buttons: 'Ok'
+    //         }).then( res => window.location.href = '/home');
+    //     }
+    //   } else {
+    //     // Si no hay ningún token se manda al login
+    //     this.redirectTo = 1;
+    //     this.$router.push({ name: 'login' });
+    //   }
+    // }
     /* ------------------- EVENTOS SOCKET.IO ------------------- */
     /* Cuando el rival se va de la partida */
     socket.on('userlogout', () => {
@@ -266,9 +314,10 @@ export default {
           /* Verificar si se está en la página de juegos, solo en ella ejecutará la alerta */
           if (`/${pathnamePlay}` === `/${pathnameThis}`) {
             /* Eliminación inmediata de la sesión actual */
-            socket.emit('deletepath', this.thisPath);
+            socket.emit('deletepath', this.$route.query.id);
+            // socket.emit('deletepath', this.thisPath);
             /* Eliminación de la partida en el cliente */
-            localStorage.removeItem('path');
+            localStorage.removeItem('gameData');
             /* Eliminar información de la última partida jugada */
             localStorage.removeItem('infoGame');
             this.rivalState = 2;
@@ -290,6 +339,9 @@ export default {
     });
     /* Cuando el rival se va y vuelve aún en partida activa */
     socket.on('entry', user => {
+      console.log('Sí tira el evento');
+      console.log('Usuario que vuelve a entrar: ', user);
+      console.log('this.rivalState = ', this.rivalState);
       if (this.rivalState === 0 && user === this.rivalNick) {
         this.rivalState = 1;
         setTimeout( () => {
@@ -325,7 +377,7 @@ export default {
         /* Cuando el rival ha decidido no seguir jugando */
         if (!data.res) {
           /* Eliminar la partida del lado del cliente */
-          localStorage.removeItem('path');
+          localStorage.removeItem('gameData');
           /* Eliminar información de la última partida jugada */
           localStorage.removeItem('infoGame');
           swal.close();
@@ -352,7 +404,7 @@ export default {
       if (nick === this.userData.nick) {
         this.timeout = true;
         /* Eliminar la ruta del localStorage */
-        localStorage.removeItem('path');
+        localStorage.removeItem('gameData');
         /* Eliminar información de la última partida */
         localStorage.removeItem('infoGame');
         swal.close();
@@ -371,7 +423,7 @@ export default {
       this.updatePoints(this.userData.id, 3);
       this.forceLeft = true;
       /* Eliminar la ruta del localStorage */
-      localStorage.removeItem('path');
+      localStorage.removeItem('gameData');
       /* Eliminar información de la última partida */
       localStorage.removeItem('infoGame');
       /* Contenido de la alerta */
@@ -401,6 +453,12 @@ export default {
   watch: {
     /* Cuando se ha obtenido la información del usuario */
     async userData(val) {
+      /* Emitir la entrada del usuario */
+      socket.emit('entry', this.userData.nick);
+      /* El símbolo que pintará cada jugador */
+      this.draw = this.userData.nick === this.p1 ? 'X' : 'O';
+      /* Nombre del nick del rival */
+      this.rivalNick = this.p1 === this.userData.nick ? this.p2 : this.p1;
       /* Consultar los puntos actuales del jugador */
       try {
         let { id } = this.userData;
@@ -466,11 +524,12 @@ export default {
               /* Reiniciar el contador */
               this.time = 10;
               /* Eliminar la ruta del localStorage */
-              localStorage.removeItem('path');
+              localStorage.removeItem('gameData');
               /* Eliminar información de la última partida */
               localStorage.removeItem('infoGame');
               /* Eliminar la ruta actual */
-              socket.emit('deletepath', this.thisPath);
+              socket.emit('deletepath', this.$route.query.id);
+              // socket.emit('deletepath', this.thisPath);
               /* Mostrar una alerta */
               swal({
                 icon: 'error',
@@ -647,9 +706,10 @@ export default {
                         if (!this.rivalResponse && this.rivalState !== 2 && this.myResponse) {
                           this.timeout = true;
                           /* Eliminar partida del servidor */
-                          socket.emit('deletepath', this.thisPath);
+                          // socket.emit('deletepath', this.thisPath);
+                          socket.emit('deletepath', this.$route.query.id);
                           /* Eliminar ruta del localStorage */
-                          localStorage.removeItem('path');
+                          localStorage.removeItem('gameData');
                           /* Avisarle al rival que el tiempo de espera se agotó */
                           socket.emit('timeout', this.rivalNick);
                           swal({
@@ -665,9 +725,10 @@ export default {
                     /* Cuando no quiere volver a jugar */
                   } else if (action === false) {
                     /* Eliminar partida del servidor */
-                    socket.emit('deletepath', this.thisPath);
+                    // socket.emit('deletepath', this.thisPath);
+                    socket.emit('deletepath', this.$route.query.id);
                     /* Eliminar ruta del localStorage */
-                    localStorage.removeItem('path');
+                    localStorage.removeItem('gameData');
                     /* Eliminar información de la partida jugada */
                     localStorage.removeItem('infoGame');
                     /* Envío de respuesta al rival */
@@ -726,9 +787,10 @@ export default {
                       if (!this.rivalResponse && this.rivalState !== 2 && this.myResponse) {
                         this.timeout = true;
                         /* Eliminar partida del servidor */
-                        socket.emit('deletepath', this.thisPath);
+                        // socket.emit('deletepath', this.thisPath);
+                        socket.emit('deletepath', this.$route.query.id);
                         /* Eliminar ruta del localStorage */
-                        localStorage.removeItem('path');
+                        localStorage.removeItem('gameData');
                         /* Avisarle al rival que el tiempo de espera se agotó */
                         socket.emit('timeout', this.rivalNick);
                         swal({
@@ -746,9 +808,10 @@ export default {
                 /* Usuario actual ha decidio no seguir jugando */
                 } else if (action === false) {
                   /* Eliminar partida del servidor */
-                  socket.emit('deletepath', this.thisPath);
+                  // socket.emit('deletepath', this.thisPath);
+                  socket.emit('deletepath', this.$route.query.id);
                   /* Eliminar ruta del localStorage */
-                  localStorage.removeItem('path');
+                  localStorage.removeItem('gameData');
                   /* Eliminar información de la partida jugada */
                   localStorage.removeItem('infoGame');
                   /* Avisarle al rival la decisión */
@@ -857,9 +920,10 @@ export default {
                         if (!this.rivalResponse && this.rivalState !== 2 && this.myResponse) {
                           this.timeout = true;
                           /* Eliminar partida del servidor */
-                          socket.emit('deletepath', this.thisPath);
+                          // socket.emit('deletepath', this.thisPath);
+                          socket.emit('deletepath', this.$route.query.id);
                           /* Eliminar ruta del localStorage */
-                          localStorage.removeItem('path');
+                          localStorage.removeItem('gameData');
                           /* Avisarle al rival que el tiempo se ha agotado */
                           socket.emit('timeout', this.rivalNick);
                           swal({
@@ -875,9 +939,10 @@ export default {
                   /* Cuando el jugador actual ha decidido no continuar jugando */
                   } else if (action === false) {
                     /* Eliminar partida del servidor */
-                    socket.emit('deletepath', this.thisPath);
+                    // socket.emit('deletepath', this.thisPath);
+                    socket.emit('deletepath', this.$route.query.id);
                     /* Eliminar ruta del localStorage */
-                    localStorage.removeItem('path');
+                    localStorage.removeItem('gameData');
                     /* Eliminar información de la partida jugada */
                     localStorage.removeItem('infoGame');
                     /* Avisarle al rival la decisión */
@@ -939,9 +1004,10 @@ export default {
                       if (!this.rivalResponse && this.rivalState !== 2 && this.myResponse) {
                         this.timeout = true;
                         /* Eliminar partida del servidor */
-                        socket.emit('deletepath', this.thisPath);
+                        // socket.emit('deletepath', this.thisPath);
+                        socket.emit('deletepath', this.$route.query.id);
                         /* Eliminar ruta del localStorage */
-                        localStorage.removeItem('path');
+                        localStorage.removeItem('gameData');
                         /* Notificarle al rival que excedió el tiempo para responder */
                         socket.emit('timeout', this.rivalNick);
                         swal({
@@ -957,9 +1023,10 @@ export default {
                 /* Si el usuario actual decidió no continuar jugando */
                 } else if (action === false) {
                   /* Eliminar partida del servidor */
-                  socket.emit('deletepath', this.thisPath);
+                  // socket.emit('deletepath', this.thisPath);
+                  socket.emit('deletepath', this.$route.query.id);
                   /* Eliminar ruta del localStorage */
-                  localStorage.removeItem('path');
+                  localStorage.removeItem('gameData');
                   /* Eliminar información de la partida jugada */
                   localStorage.removeItem('infoGame');
                   /* Notificar al rival la decisión */
@@ -1116,6 +1183,10 @@ export default {
       type: String,
       default: 'Player2',
       required: true
+    },
+    /* La data del jugador */
+    data: {
+      type: Object
     }
   }
 };
