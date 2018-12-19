@@ -1,8 +1,8 @@
 /* ---------------- ENRUTADOR ----------------- */
 import vue from 'vue';
 import vueRouter from 'vue-router';
-import swal from 'sweetalert';
-import { authorization, invalidTokenAlert } from './functions';
+// import swal from 'sweetalert';
+// import { authorization, invalidTokenAlert } from './functions';
 vue.use(vueRouter);
 
 /* Componentes */

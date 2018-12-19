@@ -90,14 +90,14 @@ import Chat from './Chat.vue';
 import swal from "sweetalert";
 /* Socket.io */
 import io from 'socket.io-client';
-const socket = io.connect('http://127.0.0.1:3000/play');
+// const socket = io.connect('http://127.0.0.1:3000/play');
 
 export default {
   /* ----------------------------- VARIABLES ------------------------------- */
   data() {
     return {
       /* Conexión a socket.io para ser usada en el componente Chat */
-      socket: socket,
+      socket: io.connect('http://192.168.0.33:3000/play'),
       /* Información del usuario actual */
       userData: {},
       /* Puntos actuales del jugador */
@@ -154,17 +154,14 @@ export default {
         mv.userData = mv.$props.data;
       });
     }
-    // if (to.params.data) {
-    //   next(mv => {
-    //     mv.userData = mv.$props.data;
-    //   });
-    // } else {
-    //   /* Cuando se a */
-    // }
+  },
+  beforeRouteLeave (to, from, next) {
+    // TODO: Arreglar la salida de usuarios
+    this.socket.close();
+    next();
   },
   /* -------------------------- COMPONENTE CREADO ------------------------- */
   async created() {
-    console.log(this.userData.nick);
     /* Preguntar si existe información de una partida activa */
     if (localStorage.getItem('infoGame')) {
       /* Preguntar si existe información de la partida */
@@ -182,25 +179,26 @@ export default {
     if (params[params.length - 1] === '#') {
       params = params.substr(0, params.length - 2);
     }
-    this.thisPath = `${pathname}${params}`;
+    // this.thisPath = `${pathname}${params}`;
+    this.thisPath = this.$route.query.id;
     // if (this.data) {
     //   this.userData = this.data;
     // }
     /* Unirlo a un nuevo canal */
-    // socket.emit('joinroom', this.thisPath);
-    socket.emit('joinroom', this.$route.query.id);
+    // this.socket.emit('joinroom', this.thisPath);
+    this.socket.emit('joinroom', this.$route.query.id);
     /* Permite renderizar la vista actual */
     this.redirectTo = 0;
     /* Obtiene la data del usuario actual guardada localmente */
     // this.userData = JSON.parse(localStorage.getItem('userData'));
     localStorage.removeItem('userData');
     // /* Emitir la entrada del usuario */
-    // socket.emit('entry', this.userData.nick);
+    // this.socket.emit('entry', this.userData.nick);
     // /* El símbolo que pintará cada jugador */
     // this.draw = this.userData.nick === this.p1 ? 'X' : 'O';
     // Guardar la ruta
     // localStorage.setItem('path', this.$route.query.id);
-    
+
     /* Guardar los datos de esta ruta */
     const gameData = {
       p1: this.p1,
@@ -217,14 +215,14 @@ export default {
     /* ------- CUANDO SE ENVÍA DESDE EL HOME (INICIAR UNA PARTIDA) ------- */
     // if (localStorage.getItem('userData')) {
       /* Unirlo a un nuevo canal */
-      // socket.emit('joinroom', this.thisPath);
+      // this.socket.emit('joinroom', this.thisPath);
       // /* Permite renderizar la vista actual */
       // this.redirectTo = 0;
       // /* Obtiene la data del usuario actual guardada localmente */
       // this.userData = JSON.parse(localStorage.getItem('userData'));
       // localStorage.removeItem('userData');
       // /* Emitir la entrada del usuario */
-      // socket.emit('entry', this.userData.nick);
+      // this.socket.emit('entry', this.userData.nick);
       // /* El símbolo que pintará cada jugador */
       // this.draw = this.userData.nick === this.p1 ? 'X' : 'O';
       // // Guardar la ruta
@@ -247,7 +245,7 @@ export default {
     //             /* Comprobar si el usuario que visita es uno de los dos jugadores */
     //             if (auth.data.nick === this.p1 || auth.data.nick === this.p2) {
     //               /* Unirlo a un nuevo canal (o al que estaba si salió y volvió) */
-    //               socket.emit('joinroom', this.thisPath);
+    //               this.socket.emit('joinroom', this.thisPath);
     //               /* Indica que la vista actual se renderizará */
     //               this.redirectTo = 0;
     //               /* Asigna la data del usario */
@@ -261,7 +259,7 @@ export default {
     //               /* Guardar la ruta/sobrescribir */
     //               localStorage.setItem('path', this.thisPath);
     //               /* Emite una nueva entrada */
-    //               socket.emit('entry', this.userData.nick);
+    //               this.socket.emit('entry', this.userData.nick);
     //             /* Cuando el visitante es un jugador extraño */
     //             } else {
     //               swal({
@@ -304,7 +302,7 @@ export default {
     // }
     /* ------------------- EVENTOS SOCKET.IO ------------------- */
     /* Cuando el rival se va de la partida */
-    socket.on('userlogout', () => {
+    this.socket.on('userlogout', () => {
         /* Cuando la partida está inactiva (esperando respuesta) y el rival se va */
         if (!this.active && !this.rivalResponse && !this.timeout) {
           /* Pathname de la página juegos `/play` */
@@ -312,10 +310,10 @@ export default {
           /* Pathname de la página actual */
           let pathnameThis = new String(location.pathname).split('/')[1];
           /* Verificar si se está en la página de juegos, solo en ella ejecutará la alerta */
-          if (`/${pathnamePlay}` === `/${pathnameThis}`) {
+          // if (`/${pathnamePlay}` === `/${pathnameThis}`) {
             /* Eliminación inmediata de la sesión actual */
-            socket.emit('deletepath', this.$route.query.id);
-            // socket.emit('deletepath', this.thisPath);
+            this.socket.emit('deletepath', this.$route.query.id);
+            // this.socket.emit('deletepath', this.thisPath);
             /* Eliminación de la partida en el cliente */
             localStorage.removeItem('gameData');
             /* Eliminar información de la última partida jugada */
@@ -330,18 +328,18 @@ export default {
               text: 'Tu rival se ha ido sin responder, la sesión actual será eliminada.',
               buttons: 'Ok',
             })
-            .then( res => window.location.href = '/home' );
-          }
+            .then( res => {
+              // window.location.href = '/home'
+              this.$router.push({ name: 'home', params: { redirected: true, data: this.userData } });
+            });
+          // }
         } else {
           /* Cuando la partida está activa */
           this.rivalState = 0;
         }
     });
     /* Cuando el rival se va y vuelve aún en partida activa */
-    socket.on('entry', user => {
-      console.log('Sí tira el evento');
-      console.log('Usuario que vuelve a entrar: ', user);
-      console.log('this.rivalState = ', this.rivalState);
+    this.socket.on('entry', user => {
       if (this.rivalState === 0 && user === this.rivalNick) {
         this.rivalState = 1;
         setTimeout( () => {
@@ -354,7 +352,7 @@ export default {
       }
     });
     /* Asignar el turno al rival */
-    socket.on('nextturn', data => {
+    this.socket.on('nextturn', data => {
       /* Usuario con el turno actual */
       this.playerTurn = data.nick;
       /* Obtendrá la data siempre y cuando vaya dirigida a él */
@@ -370,7 +368,7 @@ export default {
       }
     });
     /* Cuando una partida ha finalizado */
-    socket.on('again', async (data) => {
+    this.socket.on('again', async (data) => {
       /* Verificar si el evento es enviado para mi usuario */
       if (this.userData.nick === data.nick) {
         this.rivalResponse = true;
@@ -386,7 +384,10 @@ export default {
             title: '¡No va más!',
             text: `${this.rivalNick} no quiere jugar más.`,
             buttons: 'Volver',
-          }).then( res => window.location.href = '/home');
+          }).then( res => {
+              // window.location.href = '/home'
+              this.$router.push({ name: 'home', params: { redirected: true, data: this.userData } });
+            });
         } else {
           /* Cuando quiere volver a jugar */
           if (this.myResponse) {
@@ -400,7 +401,7 @@ export default {
       }
     });
     /* Cuando el jugador actual no respondió sobre una nueva partida */
-    socket.on('timeout', nick => {
+    this.socket.on('timeout', nick => {
       if (nick === this.userData.nick) {
         this.timeout = true;
         /* Eliminar la ruta del localStorage */
@@ -414,11 +415,14 @@ export default {
           text: 'Tardaste mucho en responder, la sesión actual ha finalizado.',
           buttons: 'Ok'
         })
-        .then( res => window.location.href = '/home' );
+        .then( res => {
+          // window.location.href = '/home'
+          this.$router.push({ name: 'home', params: { redirected: true, data: this.userData } });
+        });
       }
     });
     /* Cuando un usuario abando una partida estando activa */
-    socket.on('forceleft', () => {
+    this.socket.on('forceleft', () => {
       /* Añadirle 3 puntos al usuario */
       this.updatePoints(this.userData.id, 3);
       this.forceLeft = true;
@@ -443,7 +447,10 @@ export default {
             }
           }
       })
-      .then( action => window.location.href = '/home' );
+      .then( res => {
+        // window.location.href = '/home'
+        this.$router.push({ name: 'home', params: { redirected: true, data: this.userData } });
+      });
     });
   },
   mounted() {
@@ -454,7 +461,7 @@ export default {
     /* Cuando se ha obtenido la información del usuario */
     async userData(val) {
       /* Emitir la entrada del usuario */
-      socket.emit('entry', this.userData.nick);
+      this.socket.emit('entry', this.userData.nick);
       /* El símbolo que pintará cada jugador */
       this.draw = this.userData.nick === this.p1 ? 'X' : 'O';
       /* Nombre del nick del rival */
@@ -528,8 +535,8 @@ export default {
               /* Eliminar información de la última partida */
               localStorage.removeItem('infoGame');
               /* Eliminar la ruta actual */
-              socket.emit('deletepath', this.$route.query.id);
-              // socket.emit('deletepath', this.thisPath);
+              this.socket.emit('deletepath', this.$route.query.id);
+              // this.socket.emit('deletepath', this.thisPath);
               /* Mostrar una alerta */
               swal({
                 icon: 'error',
@@ -545,14 +552,16 @@ export default {
                   swal.close();
                   document.body.style.height = '';
                   document.body.style.overflow = '';
-                  window.location.href = '/home';
+                  // window.location.href = '/home';
+                  this.$router.push({ name: 'home', params: { redirected: true, data: this.userData } });
               });
               /* Redireccionar automáticamente luego de 5s */
               setTimeout(() => {
                 swal.close();
                 document.body.style.height = '';
                 document.body.style.overflow = '';
-                window.location.href = '/home';
+                // window.location.href = '/home';
+                this.$router.push({ name: 'home', params: { redirected: true, data: this.userData } });
               }, 5000);
             }
             /* Cuando el rival se vuelve a conectar */
@@ -688,7 +697,7 @@ export default {
                       localStorage.removeItem('infoGame');
                     }
                     /* Se le envía la respuesta al rival */
-                    socket.emit('again', { res: true, nick: this.rivalNick });
+                    this.socket.emit('again', { res: true, nick: this.rivalNick });
                     /* Limpieza del tablero */
                     this.clear();
                     /* Alerta indicando la espera de la respuesta del rival, si no la ha hecho */
@@ -706,35 +715,41 @@ export default {
                         if (!this.rivalResponse && this.rivalState !== 2 && this.myResponse) {
                           this.timeout = true;
                           /* Eliminar partida del servidor */
-                          // socket.emit('deletepath', this.thisPath);
-                          socket.emit('deletepath', this.$route.query.id);
+                          // this.socket.emit('deletepath', this.thisPath);
+                          this.socket.emit('deletepath', this.$route.query.id);
                           /* Eliminar ruta del localStorage */
                           localStorage.removeItem('gameData');
                           /* Avisarle al rival que el tiempo de espera se agotó */
-                          socket.emit('timeout', this.rivalNick);
+                          this.socket.emit('timeout', this.rivalNick);
                           swal({
                             icon: 'error',
                             title: '¡Tiempo de espera agotado!',
                             text: 'Tu rival no ha respondido, la partida actual ha finalizado.',
                             buttons:'Ok'
                           })
-                          .then( res => window.location.href = '/home' );
+                          .then( res => {
+                            // window.location.href = '/home'
+                            this.$router.push({ name: 'home', params: { redirected: true, data: this.userData } });
+                          });
                         }
                       });
                     }
                     /* Cuando no quiere volver a jugar */
                   } else if (action === false) {
                     /* Eliminar partida del servidor */
-                    // socket.emit('deletepath', this.thisPath);
-                    socket.emit('deletepath', this.$route.query.id);
+                    // this.socket.emit('deletepath', this.thisPath);
+                    this.socket.emit('deletepath', this.$route.query.id);
                     /* Eliminar ruta del localStorage */
                     localStorage.removeItem('gameData');
                     /* Eliminar información de la partida jugada */
                     localStorage.removeItem('infoGame');
                     /* Envío de respuesta al rival */
-                    socket.emit('again', { res: false, nick: this.rivalNick });
+                    this.socket.emit('again', { res: false, nick: this.rivalNick });
                     /* Redirección a la página inicio */
-                    setTimeout( () => window.location.href = '/home', 100);
+                    setTimeout( () => {
+                      // window.location.href = '/home'
+                      this.$router.push({ name: 'home', params: { redirected: true, data: this.userData } });
+                    }, 100);
                   }
                 });
               }
@@ -770,7 +785,7 @@ export default {
                     localStorage.removeItem('infoGame');
                   }
                   /* Avisarle al rival que este usuario sí quiere jugar */
-                  socket.emit('again', { res: true, nick: this.rivalNick });
+                  this.socket.emit('again', { res: true, nick: this.rivalNick });
                   this.clear();
                   /* Esperando la respuesta del rival */
                   if (!this.active) {
@@ -787,12 +802,12 @@ export default {
                       if (!this.rivalResponse && this.rivalState !== 2 && this.myResponse) {
                         this.timeout = true;
                         /* Eliminar partida del servidor */
-                        // socket.emit('deletepath', this.thisPath);
-                        socket.emit('deletepath', this.$route.query.id);
+                        // this.socket.emit('deletepath', this.thisPath);
+                        this.socket.emit('deletepath', this.$route.query.id);
                         /* Eliminar ruta del localStorage */
                         localStorage.removeItem('gameData');
                         /* Avisarle al rival que el tiempo de espera se agotó */
-                        socket.emit('timeout', this.rivalNick);
+                        this.socket.emit('timeout', this.rivalNick);
                         swal({
                           icon: 'error',
                           title: '¡Tiempo de espera agotado!',
@@ -801,28 +816,34 @@ export default {
                           closeOnClickOutside: false,
                           closeOnEsc: false
                         })
-                        .then( res => window.location.href = '/home' );
+                        .then( res => {
+                          // window.location.href = '/home'
+                          this.$router.push({ name: 'home', params: { redirected: true, data: this.userData } });
+                        });
                       }
                     });
                   }
                 /* Usuario actual ha decidio no seguir jugando */
                 } else if (action === false) {
                   /* Eliminar partida del servidor */
-                  // socket.emit('deletepath', this.thisPath);
-                  socket.emit('deletepath', this.$route.query.id);
+                  // this.socket.emit('deletepath', this.thisPath);
+                  this.socket.emit('deletepath', this.$route.query.id);
                   /* Eliminar ruta del localStorage */
                   localStorage.removeItem('gameData');
                   /* Eliminar información de la partida jugada */
                   localStorage.removeItem('infoGame');
                   /* Avisarle al rival la decisión */
-                  socket.emit('again', { res: false, nick: this.rivalNick });
+                  this.socket.emit('again', { res: false, nick: this.rivalNick });
                   /* Mandar a la página de inicio */
-                  setTimeout( () => window.location.href = '/home', 100);
+                  setTimeout( () => {
+                    // window.location.href = '/home'
+                    this.$router.push({ name: 'home', params: { redirected: true, data: this.userData } });
+                  }, 100);
                 }
               });
             }
             /* Emisión de evento para marcar casilla en el tablero del rival */
-            socket.emit('nextturn', {
+            this.socket.emit('nextturn', {
               // Nick usuario a próximo turno
               nick: this.rivalNick,
               // Símbolo que se dibujará en tablero del rival
@@ -903,7 +924,7 @@ export default {
                     if (localStorage.getItem('infoGame')) {
                       localStorage.removeItem('infoGame');
                     }
-                    socket.emit('again', { res: true, nick: this.rivalNick });
+                    this.socket.emit('again', { res: true, nick: this.rivalNick });
                     this.clear();
                     /* El rival no ha respondido */
                     if (!this.active) {
@@ -920,34 +941,40 @@ export default {
                         if (!this.rivalResponse && this.rivalState !== 2 && this.myResponse) {
                           this.timeout = true;
                           /* Eliminar partida del servidor */
-                          // socket.emit('deletepath', this.thisPath);
-                          socket.emit('deletepath', this.$route.query.id);
+                          // this.socket.emit('deletepath', this.thisPath);
+                          this.socket.emit('deletepath', this.$route.query.id);
                           /* Eliminar ruta del localStorage */
                           localStorage.removeItem('gameData');
                           /* Avisarle al rival que el tiempo se ha agotado */
-                          socket.emit('timeout', this.rivalNick);
+                          this.socket.emit('timeout', this.rivalNick);
                           swal({
                             icon: 'error',
                             title: '¡Tiempo de espera agotado!',
                             text: 'Tu rival no ha respondido, la partida actual ha finalizado.',
                             buttons:'Ok'
                           })
-                          .then( res => window.location.href = '/home' );
+                          .then( res => {
+                            // window.location.href = '/home'
+                            this.$router.push({ name: 'home', params: { redirected: true, data: this.userData } });
+                          });
                         }
                       });
                     }
                   /* Cuando el jugador actual ha decidido no continuar jugando */
                   } else if (action === false) {
                     /* Eliminar partida del servidor */
-                    // socket.emit('deletepath', this.thisPath);
-                    socket.emit('deletepath', this.$route.query.id);
+                    // this.socket.emit('deletepath', this.thisPath);
+                    this.socket.emit('deletepath', this.$route.query.id);
                     /* Eliminar ruta del localStorage */
                     localStorage.removeItem('gameData');
                     /* Eliminar información de la partida jugada */
                     localStorage.removeItem('infoGame');
                     /* Avisarle al rival la decisión */
-                    socket.emit('again', { res: false, nick: this.rivalNick });
-                    setTimeout( () => window.location.href = '/home', 100);
+                    this.socket.emit('again', { res: false, nick: this.rivalNick });
+                    setTimeout( () => {
+                      // window.location.href = '/home'
+                      this.$router.push({ name: 'home', params: { redirected: true, data: this.userData } });
+                    }, 100);
                   }
                 });
               }
@@ -986,7 +1013,7 @@ export default {
                     localStorage.removeItem('infoGame');
                   }
                   /* Avisarle al rival */
-                  socket.emit('again', { res: true, nick: this.rivalNick });
+                  this.socket.emit('again', { res: true, nick: this.rivalNick });
                   this.clear();
                   /* Esperando la respuesta de él */
                   if (!this.active) {
@@ -1004,34 +1031,40 @@ export default {
                       if (!this.rivalResponse && this.rivalState !== 2 && this.myResponse) {
                         this.timeout = true;
                         /* Eliminar partida del servidor */
-                        // socket.emit('deletepath', this.thisPath);
-                        socket.emit('deletepath', this.$route.query.id);
+                        // this.socket.emit('deletepath', this.thisPath);
+                        this.socket.emit('deletepath', this.$route.query.id);
                         /* Eliminar ruta del localStorage */
                         localStorage.removeItem('gameData');
                         /* Notificarle al rival que excedió el tiempo para responder */
-                        socket.emit('timeout', this.rivalNick);
+                        this.socket.emit('timeout', this.rivalNick);
                         swal({
                           icon: 'error',
                           title: '¡Tiempo de espera agotado!',
                           text: 'Tu rival no ha respondido, la partida actual ha finalizado.',
                           buttons:'Ok'
                         })
-                        .then( res => window.location.href = '/home' );
+                        .then( res => {
+                          // window.location.href = '/home'
+                          this.$router.push({ name: 'home', params: { redirected: true, data: this.userData } });
+                        });
                       }
                     });
                   }
                 /* Si el usuario actual decidió no continuar jugando */
                 } else if (action === false) {
                   /* Eliminar partida del servidor */
-                  // socket.emit('deletepath', this.thisPath);
-                  socket.emit('deletepath', this.$route.query.id);
+                  // this.socket.emit('deletepath', this.thisPath);
+                  this.socket.emit('deletepath', this.$route.query.id);
                   /* Eliminar ruta del localStorage */
                   localStorage.removeItem('gameData');
                   /* Eliminar información de la partida jugada */
                   localStorage.removeItem('infoGame');
                   /* Notificar al rival la decisión */
-                  socket.emit('again', { res: false, nick: this.rivalNick });
-                  setTimeout( () => window.location.href = '/home', 100);
+                  this.socket.emit('again', { res: false, nick: this.rivalNick });
+                  setTimeout( () => {
+                    // window.location.href = '/home'
+                    this.$router.push({ name: 'home', params: { redirected: true, data: this.userData } });
+                  }, 100);
                 }
               });
             }
@@ -1089,8 +1122,6 @@ export default {
     },
     /* Mensaje de confirmación al intentar abandonar una partida */
     closeSession() {
-      /* Quitarle 2 puntos al usuario que abandona */
-      this.updatePoints(this.userData.id, 2);
       /* Contenido de la alerta */
       const node = document.createElement('div');
       node.innerHTML = `
@@ -1123,8 +1154,18 @@ export default {
       })
       .then( action => {
         if (action === true) {
-          socket.emit('forceleft', this.thisPath);
-          setTimeout( () => window.location.href = '/home', 100);
+          this.socket.emit('forceleft', this.thisPath);
+          /* Quitarle 2 puntos al usuario que abandona */
+          this.updatePoints(this.userData.id, 2);
+          this.forceLeft = true;
+          /* Eliminar la ruta del localStorage */
+          localStorage.removeItem('gameData');
+          /* Eliminar información de la última partida */
+          localStorage.removeItem('infoGame');
+          setTimeout( () => {
+            // window.location.href = '/home'
+            this.$router.push({ name: 'home', params: { redirected: true, data: this.userData } });
+          }, 100);
         }
       });
     },
@@ -1137,7 +1178,7 @@ export default {
       this.$router.push({name: 'login', params: {
           redirected: true
       }});
-      socket.emit('forceleft', this.thisPath);
+      this.socket.emit('forceleft', this.thisPath);
     }
   },
   filters: {

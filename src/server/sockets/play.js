@@ -2,6 +2,7 @@ const event = require('../event');
 
 const socketIO = io => {
     io.of('/play').on('connection', socket => {
+        console.log('Se conectó');
         socket.on('joinroom', room => {
             socket.join(room);
             socket.room = room;
@@ -38,6 +39,7 @@ const socketIO = io => {
             socket.broadcast.to(socket.room).emit('stoptyping');
         });
         socket.on('disconnect', () => {
+            console.log('Se desconectó');
             event.emit('left', socket.nick);
             socket.broadcast.to(socket.room).emit('userlogout');
         });

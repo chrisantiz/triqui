@@ -14,7 +14,6 @@ module.exports = {
         if (req.body.id) {
             let index = arrGames.findIndex(dt => dt.id === req.body.id)
             if (index !== -1) {
-                console.log('ruta válida');
                 /* Ruta válida */
                 res.json({
                     status: 1,
@@ -22,7 +21,6 @@ module.exports = {
                 });
                 /* Ruta inválida */
             } else {
-                console.log('ruta inválida');
                 res.json({
                     status: 0,
                     auth: res.auth

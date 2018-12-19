@@ -81,7 +81,7 @@ import Sidenav from './helpers/SideNav.vue';
 import Spinner from './helpers/Spinner.vue';
 /* Socket.io */
 import io from 'socket.io-client';
-const socket = io.connect('http://127.0.0.1:3000/home');
+const socket = io.connect('http://192.168.0.33:3000/home');
 // Alertas
 import swal from 'sweetalert';
 import Vue from 'vue';
