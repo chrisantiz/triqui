@@ -81,7 +81,7 @@ import Sidenav from './helpers/SideNav.vue';
 import Spinner from './helpers/Spinner.vue';
 /* Socket.io */
 import io from 'socket.io-client';
-const socket = io.connect('http://192.168.0.33:3000/home');
+import { socket } from '../../server/keys'
 // Alertas
 import swal from 'sweetalert';
 import Vue from 'vue';
@@ -144,6 +144,7 @@ export default {
         return {
             /* Datos del usuario actual */
             userData: {},
+            socket: io.connect(`${socket.URI}/home`),
             /* Puntos del usuario */
             points: null,
             /* Identificador de la sala donde jugarán */
@@ -266,14 +267,14 @@ export default {
         //     this.redirectTo = 0;
         // }
         /* --------- Evento para cancelar un reto -------- */
-        socket.on('cancelchallenge', user => {
+        this.socket.on('cancelchallenge', user => {
             if (this.userData.nick === user) {
                 this.challengeCanceled = true;
                 swal.close();
             }
         });
         /* ---------- Todos los usuarios en línea ---------- */
-        socket.on('usersonline', users => {
+        this.socket.on('usersonline', users => {
             // Se busca si el usuario actual viene dentro de los usuarios conectados
             let index = users.findIndex( usr => usr.nick === this.userData.nick);
             if(index !== -1) {
@@ -283,7 +284,7 @@ export default {
             this.users = users;
         });
         /* ----- Cerrar sesiones abiertas en otras pestañas ----- */
-        socket.on('closesession', user => {
+        this.socket.on('closesession', user => {
             // Comprobar si quien cerró sesión fue el mismo usuario en otra pestaña
             if(user === this.userData.nick) {
                 setTimeout( () => {
@@ -292,19 +293,19 @@ export default {
             }
         })
         /* ------------------ Respuesta de reto ------------------ */
-        socket.on('challengeresponse', info => {
+        this.socket.on('challengeresponse', info => {
             // Cuando responden el reto
             if(info.p1 === this.userData.nick) {
                 // Comprobar si el reto fue respondido
                 if(info.response) {
                     // Se verifica si se aceptó para dirigir al combate
                     if(info.accept) {
-                        socket.emit('startgame', {
+                        this.socket.emit('startgame', {
                             p1: { nick: info.p1, status: 1 },
                             p2: { nick: info.p2, status: 1 },
                             id: info.id
                         });
-                        socket.emit('updateusers', [info.p1, info.p2]);
+                        this.socket.emit('updateusers', [info.p1, info.p2]);
                         /* Guardar datos localmente para su uso en Play.vue */
                         localStorage.setItem('userData', JSON.stringify(this.userData));
                         if (localStorage.getItem('infoGame')) {
@@ -350,7 +351,7 @@ export default {
             }
         })
         /* ----------- Reto entrante ------------- */
-        socket.on('challenge', info => {
+        this.socket.on('challenge', info => {
             // Comprobar si el reto es para el usuario actual
             if(info.to === this.userData.nick) {
                 // Si lo es se muestra una alerta pidiendo aceptar o rechazar
@@ -456,7 +457,7 @@ export default {
                 });
             }
             // Agrega el usuario actual
-            socket.emit('adduser', {
+            this.socket.emit('adduser', {
                 nick: this.userData.nick,
                 fight: false
             });
@@ -465,14 +466,14 @@ export default {
     methods: {
         /* ----------- Método para cancelar un reto ----------- */
         cancelChallenge() {
-            socket.emit('cancelchallenge', this.otherPlayer);
+            this.socket.emit('cancelchallenge', this.otherPlayer);
             this.bind.waitResponse = false;
             this.challengeCanceled = true;
             this.otherPlayer = '';
         },
         /* ------- Método para responder un reto ------- */
         challengeResponse(info) {
-            // socket.emit('challengeresponse', {
+            // this.socket.emit('challengeresponse', {
             //     // Quien responde
             //     to: this.userData.nick,
             //     // A quien le responde
@@ -483,7 +484,7 @@ export default {
             //     path: info.path
             // });
             /* ------------------------ */
-            socket.emit('challengeresponse', info);
+            this.socket.emit('challengeresponse', info);
             // Validar si el reto fue respondido y aceptado
             if (info.response && info.accept) {
                 // Para saber que este usuario está en combate
@@ -516,7 +517,7 @@ export default {
             this.bind.waitResponse = true;
             this.challengeCanceled = false;
             // Emitir el evento
-            socket.emit('challenge', {
+            this.socket.emit('challenge', {
                 to,
                 from: this.userData.nick,
             });
@@ -527,7 +528,7 @@ export default {
             M.Sidenav.getInstance(document.querySelector('#menu-side')).close();
 
             localStorage.removeItem('token');
-            socket.emit('closesession');
+            this.socket.emit('closesession');
             this.$router.push({ name: 'login', params: { redirected: true } });
         }
     },

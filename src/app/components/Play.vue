@@ -91,13 +91,14 @@ import swal from "sweetalert";
 /* Socket.io */
 import io from 'socket.io-client';
 // const socket = io.connect('http://127.0.0.1:3000/play');
+import { socket } from '../../server/keys'
 
 export default {
   /* ----------------------------- VARIABLES ------------------------------- */
   data() {
     return {
       /* Conexión a socket.io para ser usada en el componente Chat */
-      socket: io.connect('http://192.168.0.33:3000/play'),
+      socket: io.connect(`${socket.URI}/play`),
       /* Información del usuario actual */
       userData: {},
       /* Puntos actuales del jugador */

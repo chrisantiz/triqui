@@ -12,6 +12,7 @@
     "express":"^4.16.3",
     "santz":"^0.9.2",
     "jsonwebtoken":"^8.3.0",
+    "bcryptjs":"2.4.3",
     "moment":"^2.22.2",
     "morgan":"^1.9.0",
     "socket.io":"^2.1.1",

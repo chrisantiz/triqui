@@ -1,3 +1,4 @@
+const bcrypt = require('bcryptjs');
 /* Métodos persistencia de datos en MYSQL */
 const model = require('./model');
 /* Métodos JsonWebToken */
@@ -72,6 +73,10 @@ module.exports = {
         /* Obtención de los datos a insertar */
         let { data } = req.body;
         try {
+            const salt = bcrypt.genSaltSync(10);
+            const hash = bcrypt.hashSync(data.pass, salt);
+            data.pass = hash;
+            // Comparar bcrypt.compareSync("B4c0/\/", hash);
             let result = await model.insert(data);
             let exp = {};
             /* Verificar si se ha afectado alguna fila */

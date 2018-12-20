@@ -2,7 +2,7 @@ const express = require('express'),
         path = require('path'),
         morgan = require('morgan'),
         history = require('connect-history-api-fallback'),
-        port = process.env.PORT || 3000,
+        { PORT } = require('./server/keys'),
         publicDir = express.static(path.join(__dirname, 'public')),
         viewsDir = path.join(__dirname, 'views'),
         routes = require('./routes'),
@@ -11,7 +11,7 @@ const express = require('express'),
 app
     .use(express.json())
     .use(express.urlencoded({extended: false}))
-    .set('port', port)
+    .set('port', process.env.PORT || PORT)
     .set('views', viewsDir)
     .use(morgan('dev'))
     /* Rutas usadas en la API */
