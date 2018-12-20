@@ -1,12 +1,6 @@
 const Santz = require('./database');
 const table = 'users';
-function PointError() {
-    this.status = 500;
-    this.points = null;
-}
-function CreateDataError() {
-    this.status = 500;
-}
+
 module.exports = {
     /* Obtener todos o un solo usuario */
     select(id) {
@@ -20,8 +14,8 @@ module.exports = {
         return Santz.insert(table).values(data).exec();
     },
     /* Acceder al juego */
-    login( { nick, pass } ) {
-        return Santz.select('id', 'nick').from(table).where('nick', nick).and('pass', pass).exec();
+    login(nick) {
+        return Santz.select('id', 'nick', 'pass').from(table).where('nick', nick).exec();
     },
     /* Obtener los puntos de un jugador */
     getPoints(id) {

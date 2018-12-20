@@ -51,14 +51,19 @@ module.exports = {
     /* ---------- Método para logearse ---------- */
     async login(req, res) {
         try {
-            let data = await model.login(req.body);
+            let data = await model.login(req.body.nick);
             let user = {};
             /* Cuando se ha obtenido información del usuario solicitado */
             if (data.length) {
                 user = data[0];
-                const token = jwt.create(user);
-                user.token = token;
-                user.status = 200;
+                const hash = user.pass;
+                if (bcrypt.compareSync(req.body.pass, hash)) {
+                    const token = jwt.create(user);
+                    user.token = token;
+                    user.status = 200;
+                } else {
+                    user.status = 500;
+                }
             /* Cuando las credenciales son incorrectas */
             } else {
                 user.status = 500;
@@ -76,7 +81,6 @@ module.exports = {
             const salt = bcrypt.genSaltSync(10);
             const hash = bcrypt.hashSync(data.pass, salt);
             data.pass = hash;
-            // Comparar bcrypt.compareSync("B4c0/\/", hash);
             let result = await model.insert(data);
             let exp = {};
             /* Verificar si se ha afectado alguna fila */
