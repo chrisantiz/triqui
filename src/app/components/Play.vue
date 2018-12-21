@@ -90,15 +90,17 @@ import Chat from './Chat.vue';
 import swal from "sweetalert";
 /* Socket.io */
 import io from 'socket.io-client';
-// const socket = io.connect('http://127.0.0.1:3000/play');
-import { socket } from '../../server/keys'
+// Constantes globales
+import { socket, PORT } from '../../server/keys'
+
+// TODO: Actualizar la cantidad de partidas jugadas al terminar una partida
 
 export default {
   /* ----------------------------- VARIABLES ------------------------------- */
   data() {
     return {
       /* Conexión a socket.io para ser usada en el componente Chat */
-      socket: io.connect(`${socket.URI}/play`),
+      socket: io.connect(`${socket.URI}:${PORT}/play`),
       /* Información del usuario actual */
       userData: {},
       /* Puntos actuales del jugador */

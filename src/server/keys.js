@@ -3,6 +3,6 @@ module.exports = {
     PORT: 3000,
     // Configuración global de socket.io
     socket: {
-        URI: `http://127.0.0.1:${this.PORT}`
+        URI: 'http://127.0.0.1'
     }
 }

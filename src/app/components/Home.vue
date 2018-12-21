@@ -81,7 +81,7 @@ import Sidenav from './helpers/SideNav.vue';
 import Spinner from './helpers/Spinner.vue';
 /* Socket.io */
 import io from 'socket.io-client';
-import { socket } from '../../server/keys'
+import { socket, PORT } from '../../server/keys'
 // Alertas
 import swal from 'sweetalert';
 import Vue from 'vue';
@@ -144,7 +144,7 @@ export default {
         return {
             /* Datos del usuario actual */
             userData: {},
-            socket: io.connect(`${socket.URI}/home`),
+            socket: io.connect(`${socket.URI}:${PORT}/home`),
             /* Puntos del usuario */
             points: null,
             /* Identificador de la sala donde jugarán */
