@@ -3,7 +3,7 @@
         <div class="navbar-fixed">
             <nav class="blue">
                 <div class="nav-wrapper container">
-                    <a href="#" class="brand-logo left">TRIKI</a>
+                    <a href="#" class="brand-logo left">TRIQUI</a>
                     <ul class="right">
                         <li>
                             <a href="#" class="sidenav-trigger show-on-large m-0 p-0" data-target="menu-side">
@@ -29,7 +29,7 @@
                 </div>
             </li>
             <li>
-                <a href="#" @click="instance">
+                <a href="#modalHistory" class="modal-trigger" @click="instance">
                     <i class="material-icons">cloud</i>
                     Mis registros
                 </a>
@@ -48,6 +48,38 @@
             </li>
         </ul>
         <!-- FIN BARRA LATERAL -->
+        <!-- MODAL -->
+        <div id="modalHistory" class="modal">
+            <div class="modal-content">
+                <h4 class="center-align">Historial de partidas</h4>
+                <table class="striped centered responsive-table">
+                    <thead>
+                    <tr>
+                        <th>Jugadas</th>
+                        <th>Ganadas</th>
+                        <th>Empatadas</th>
+                        <th>Perdidas</th>
+                        <th>Interrumpidas</th>
+                    </tr>
+                    </thead>
+
+                    <tbody>
+                    <tr>
+                        <td>{{ history.pj }}</td>
+                        <td>{{ history.pg }}</td>
+                        <td>{{ history.pe }}</td>
+                        <td>{{ history.pp }}</td>
+                        <td>{{ history.pi }}</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="modal-footer">
+                <button class="btn blue modal-close waves-effect waves-light">
+                    Ok
+                </button>
+            </div>
+        </div>
     </div>
 </template>
 <script>
@@ -62,7 +94,7 @@ export default {
         },
         instance() {
             const instance = M.Sidenav.getInstance(document.querySelector('.sidenav'));
-            instance.close();
+            // instance.close();
         }
     },
     props: {
@@ -73,6 +105,18 @@ export default {
         points: {
             type: Number,
             default: 1
+        },
+        history: {
+            type: Object,
+            default: () => {
+                return {
+                    pj: 0,
+                    pg: 0,
+                    pe: 0,
+                    pp: 0,
+                    pi: 0
+                }
+            }
         }
     }
 }

@@ -155,10 +155,10 @@ module.exports = {
         }
     },
     /* Obtener datos de las partidas */
-    async getMatch(req, res) {
+    async getHistory(req, res) {
         if (res.auth.entry) {
             try {
-                let result = await model.getMatch(req.params.id);
+                let result = await model.getHistory(req.params.id);
                 res.json(apiResponse(200, false, false, result[0]));
             } catch (err) {
                 res.json(apiResponse(500, false, false));
@@ -168,7 +168,7 @@ module.exports = {
         }
     },
     /* Cambiar información de las partidas */
-    async setMatch(req, res) {
+    async setHistory(req, res) {
         if (res.auth.entry) {
             try {
                 /* Nombre de la columna a incrementar */
@@ -192,7 +192,7 @@ module.exports = {
                 } else {
                     return res.json(apiResponse(404, false, false));
                 }
-                let result = await model.setMatch(id, rows);
+                let result = await model.setHistory(id, rows);
                 /* Cuando una fila ha sido modificada */
                 if(result.changedRows === 1) {
                     res.json(apiResponse(200, false, true));

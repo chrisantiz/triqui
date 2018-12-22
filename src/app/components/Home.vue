@@ -1,7 +1,7 @@
 <template>
     <div>
         <!-- RENDERIZAR COMPONENTE BARRA SUPERIOR Y LATERAL -->
-        <sidenav :nick="userData.nick" :points="points" @closesession="closeSession" />
+        <sidenav :nick="userData.nick" :points="points" :history="history" @closesession="closeSession" />
         <!-- CONTENEDOR -->
         <div class="row container">
             <div class="section">
@@ -86,6 +86,7 @@ import { socket, PORT } from '../../server/keys'
 import swal from 'sweetalert';
 import Vue from 'vue';
 import { authorization, invalidTokenAlert } from '../router/functions';
+import { Promise } from 'q';
 export default {
     async beforeRouteEnter(to, from, next) {
         if (to.params.redirected) {
@@ -145,6 +146,8 @@ export default {
             /* Datos del usuario actual */
             userData: {},
             socket: io.connect(`${socket.URI}:${PORT}/home`),
+            /* Historial de las partidas jugadas */
+            history: {},
             /* Puntos del usuario */
             points: null,
             /* Identificador de la sala donde jugarán */
@@ -163,7 +166,7 @@ export default {
         }
     },
     mounted() {
-        M.Modal.init(document.querySelector('.modal'), { dismissible:false });
+        M.Modal.init(document.querySelector('.modal'));
     },
     async created() {
         // if(!this.redirected) {
@@ -438,20 +441,31 @@ export default {
         async userData(val) {
             /* Consultar los puntos actuales del jugador */
             try {
-                let { id } = this.userData;
-                let result = await this.axios.get(`/api/points/${id}`);
-                if (result.status === 200) {
-                    this.points = result.data.data.points;
+                const { id } = this.userData;
+
+                const resPoints = this.axios.get(`/api/points/${id}`);
+                const resHistory = this.axios.get(`/api/history/${id}`);
+
+                const result = await Promise.all([resPoints, resHistory]);
+
+                const points = result[0].data;
+                const history = result[1].data;
+
+                if (points.status === 200 && history.status === 200) {
+                    this.points = points.data.points;
+                    this.history = history.data;
                 } else {
                     M.toast({
-                        html: `<p>¡Error!</p> Lo sentimos, no pudimos obtener tus puntos actuales.`,
+                        html: `<p>¡Error!</p> Lo sentimos, no pudimos obtener el historial de tu cuenta.`,
                         displayLength: 2500,
                         classes: 'red'
                     });
                 }
+                console.log('Los puntos', points);
+                console.log('El historial', history);
             } catch (err) {
                 M.toast({
-                    html: `<p>¡Error!</p> lo sentimos, no pudimos obtener tus puntos actuales.`,
+                    html: `<p>¡Error!</p> Lo sentimos, no pudimos obtener el historial de tu cuenta.`,
                     displayLength: 2500,
                     classes: 'red'
                 });
